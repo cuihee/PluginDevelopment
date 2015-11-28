@@ -1,0 +1,7 @@
+[
+null,
+{"id":1,"expanded":true,"name":"森の町","order":2,"parentId":2,"scrollX":1111,"scrollY":1472.5},
+{"id":2,"expanded":true,"name":"フィールド","order":1,"parentId":0,"scrollX":817,"scrollY":455.5},
+{"id":3,"expanded":false,"name":"塔1F","order":4,"parentId":2,"scrollX":1159,"scrollY":1472.5},
+{"id":4,"expanded":false,"name":"宿屋1F","order":3,"parentId":1,"scrollX":809,"scrollY":504.5}
+]
