@@ -6,6 +6,7 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.0 2015/12/01 天候と時間帯をゲーム変数に格納できるよう機能追加
 // 1.0.0 2015/11/27 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
@@ -70,6 +71,16 @@
  * @desc 指定した番号のゲーム変数に「時」の値が自動設定されます。
  * @default 0
  *
+ * @param 時間帯IDのゲーム変数
+ * @desc 指定した番号のゲーム変数に「時間帯」のIDが自動設定されます。
+ * 0:深夜 1:早朝 2:朝 3:昼 4:夕方 5:夜
+ * @default 0
+ *
+ * @param 天候IDのゲーム変数
+ * @desc 指定した番号のゲーム変数に「天候」のIDが自動設定されます。
+ * 0:なし 1:雨 2:嵐 3:雪
+ * @default 0
+ *
  * @param 日時フォーマット1
  * @desc マップ上の日付ウィンドウ1行目に表示される文字列です。
  * YYYY:年 MM:月 DD:日 HH24:時(24) HH:時(12) AM:午前 or 午後 MI:分 DY:曜日
@@ -80,8 +91,8 @@
  * YYYY:年 MM:月 DD:日 HH24:時(24) HH:時(12) AM:午前 or 午後 MI:分 DY:曜日
  * @default AMHH時 MI分
  *
- * @help ゲーム内時間を実現するプラグインです。
- * 自動、マップ移動、戦闘で時間が経過し、時間と共にマップの色調が変化します。
+ * @help ゲーム内で時刻と天候の概念を表現できるプラグインです。
+ * 自動、マップ移動、戦闘で時間が経過し、時間と共に天候と色調が変化します。
  * これらの時間は調節可能で、またイベント中は時間の進行が停止します。
  * また日付や曜日も記録し、曜日の数や名称を自由に設定できます。
  * 現在日付はフォーマットに従って、画面左上に表示されます。
@@ -104,6 +115,10 @@
  * C_HIDE : カレンダーを非表示にします。
  * C_DISABLE_TINT : 時間帯による色調の変更を禁止します。
  * C_ENABLE_TINT : 時間帯による色調の変更を許可します。
+ * C_DISABLE_WEATHER : 時間経過による天候の変化を禁止します。
+ * C_ENABLE_WEATHER : 時間経過による天候の変化を許可します。
+ * C_SET_SNOW_LAND : 悪天候時に雪が降るようになります。
+ * C_RESET_SNOW_LAND : 悪天候時に雨もしくは嵐が降るようになります。
  * C_SET_SPEED [分] : 実時間1秒あたりの時間の経過速度を設定します。
  *
  * 利用規約：
@@ -212,9 +227,9 @@
                 $gameSystem.chronus().setTime(hour, minute);
                 break;
             case 'C_SET_DAY' :
-                var year = PluginManager.getArgNumber(0, args, 0, 9999);
-                var month = PluginManager.getArgNumber(1, args, 0, $gameSystem.chronus().getMonthOfYear());
-                var day = PluginManager.getArgNumber(2, args, 0, $gameSystem.chronus().getDaysOfMonth(month));
+                var year = PluginManager.getArgNumber(0, args, 1, 5000);
+                var month = PluginManager.getArgNumber(1, args, 1, $gameSystem.chronus().getMonthOfYear());
+                var day = PluginManager.getArgNumber(2, args, 1, $gameSystem.chronus().getDaysOfMonth(month));
                 $gameSystem.chronus().setDay(year, month, day);
                 break;
             case 'C_STOP' :
@@ -235,10 +250,30 @@
             case 'C_ENABLE_TINT':
                 $gameSystem.chronus().enableTint();
                 break;
+            case 'C_DISABLE_WEATHER':
+                $gameSystem.chronus().disableWeather();
+                break;
+            case 'C_ENABLE_WEATHER':
+                $gameSystem.chronus().enableWeather();
+                break;
+            case 'C_SET_SNOW_LAND':
+                $gameSystem.chronus().setSnowLand();
+                break;
+            case 'C_RESET_SNOW_LAND':
+                $gameSystem.chronus().resetSnowLand();
+                break;
             case 'C_SET_SPEED':
                 $gameSystem.chronus()._timeAutoAdd = PluginManager.getArgNumber(0, args, 0, 99);
                 break;
         }
+    };
+
+    var _Game_Interpreter_command236 = Game_Interpreter.prototype.command236;
+    Game_Interpreter.prototype.command236 = function() {
+        var result = _Game_Interpreter_command236.call(this);
+        if (!$gameParty.inBattle())
+            $gameSystem.chronus()._weatherType = Game_Chronus.weatherTypes.indexOf(this._params[0]);
+        return result;
     };
 
     //=============================================================================
@@ -265,10 +300,21 @@
     //=============================================================================
     Game_Map.prototype.isDisableTint = function() {
         var chronusTnit = false;
+        if ($dataMap.data.length === 0) return false;
         chronusTnit = $dataMap.meta.chronusTnit;
         if (chronusTnit != null) return chronusTnit === 'OFF';
         chronusTnit = $dataTilesets[$dataMap.tilesetId].meta.chronusTnit;
         if (chronusTnit != null) return chronusTnit === 'OFF';
+        return false;
+    };
+
+    Game_Map.prototype.isDisableWeather = function() {
+        var chronusWeather = false;
+        if ($dataMap.data.length === 0) return false;
+        chronusWeather = $dataMap.meta.chronusWeather;
+        if (chronusWeather != null) return chronusWeather === 'OFF';
+        chronusWeather = $dataTilesets[$dataMap.tilesetId].meta.chronusWeather;
+        if (chronusWeather != null) return chronusWeather === 'OFF';
         return false;
     };
 
@@ -283,23 +329,13 @@
     };
 
     //=============================================================================
-    // Game_Screen
-    //  色調の変更を即時反映します。
-    //=============================================================================
-    Game_Screen.prototype.toSwiftTint = function() {
-        if (this._toneDuration > 0) {
-            this._tone = this._toneTarget.clone();
-            this._toneDuration = 0;
-        }
-    };
-
-    //=============================================================================
     // Scene_Map
     //  Game_Chronusの更新を追加定義します。
     //=============================================================================
     var _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
     Scene_Map.prototype.onMapLoaded = function() {
         $gameSystem.chronus().refreshTint(true);
+        $gameSystem.chronus().refreshWeather(true);
         _Scene_Map_onMapLoaded.call(this);
     };
 
@@ -387,26 +423,32 @@ function Game_Chronus() {
 Game_Chronus.prototype             = Object.create(Game_Chronus.prototype);
 Game_Chronus.prototype.constructor = Game_Chronus;
 Game_Chronus.pluginName = 'Chronus';
+Game_Chronus.weatherTypes = ['none', 'rain', 'storm', 'snow'];
 
 Game_Chronus.prototype.initialize = function () {
-    this._timeMeter = 0;            // 一日の中での時間経過（分単位）60 * 24
-    this._dayMeter  = 0;            // ゲーム開始からの累計日数
+    this._timeMeter       = 0;            // 一日の中での時間経過（分単位）60 * 24
+    this._dayMeter        = 0;            // ゲーム開始からの累計日数
     this._timeAutoAdd     = PluginManager.getParamNumber(Game_Chronus.pluginName, null, '自然時間加算', 0, 99);
     this._timeTransferAdd = PluginManager.getParamNumber(Game_Chronus.pluginName, null, '場所移動時間加算', 0);
     this._timeBattleAdd   = PluginManager.getParamNumber(Game_Chronus.pluginName, null, '戦闘時間加算(固定)', 0);
     this._timeTurnAdd     = PluginManager.getParamNumber(Game_Chronus.pluginName, null, '戦闘時間加算(ターン)', 0);
     this._weekNames       = PluginManager.getParamArrayString(Game_Chronus.pluginName, null, '曜日配列');
     this._daysOfMonth     = PluginManager.getParamArrayNumber(Game_Chronus.pluginName, null, '月ごとの日数配列');
-    this._stop = true;              // 停止フラグ（全ての加算に対して有効。ただし手動による加算は例外）
-    this._disableTint = false;      // 色調変更禁止フラグ
-    this._calendarVisible = false;  // カレンダー表示フラグ
-    this._datetime      = null;
-    this._demandRefresh = false;
-    this._prevHour = -1;
+    this._stop            = true;         // 停止フラグ（全ての加算に対して有効。ただし手動による加算は例外）
+    this._disableTint     = false;        // 色調変更禁止フラグ
+    this._calendarVisible = false;        // カレンダー表示フラグ
+    this._disableWeather  = false;        // 天候制御禁止フラグ
+    this._weatherType     = 0;            // 天候タイプ(0:なし 1:雨 2:嵐 :3雪)
+    this._weatherPower    = 0;            // 天候の強さ
+    this._weatherCounter  = 0;            // 同一天候の維持時間
+    this._weatherSnowLand = false;        // 降雪地帯フラグ
+    this._datetime        = null;
+    this._demandRefresh   = false;
+    this._prevHour        = -1;
 };
 
 Game_Chronus.prototype.update = function () {
-    this.updateTint();
+    this.updateEffect();
     if (this.isStop() || $gameMap.isEventRunning()) {
         this._datetime = null;
         return;
@@ -418,52 +460,73 @@ Game_Chronus.prototype.update = function () {
     }
 };
 
-Game_Chronus.prototype.updateTint = function () {
-    if (!this.isEnableTint()) return;
+Game_Chronus.prototype.updateEffect = function () {
     var hour = this.getHour();
     if (this._prevHour !== hour) {
+        this.controlWeather(false);
         this.refreshTint(false);
         this._prevHour = this.getHour();
     }
 };
 
 Game_Chronus.prototype.refreshTint = function (swift) {
-    if (arguments.length === 0) swift = false;
-    if (!this.isEnableTint()) $gameScreen.clearTone();
-    else if (this.isHourInRange(0, 4)) this.setTint('midnight');
-    else if (this.isHourInRange(4, 5)) this.setTint('earlyMorning');
-    else if (this.isHourInRange(6, 9)) this.setTint('morning');
-    else if (this.isHourInRange(10, 16)) this.setTint('day');
-    else if (this.isHourInRange(17, 18)) this.setTint('evening');
-    else if (this.isHourInRange(19, 21)) this.setTint('night');
-    else if (this.isHourInRange(22, 23)) this.setTint('midnight');
-
-    if (swift) $gameScreen.toSwiftTint();
+    this.isEnableTint() ? this.setTint(this.getTimeZone(), swift) : $gameScreen.clearTone();
 };
 
-Game_Chronus.prototype.setTint = function (type) {
+Game_Chronus.prototype.setTint = function (timezone, swift) {
     var tone = null;
-    switch (type) {
-        case 'midnight':
+    switch (timezone) {
+        case 0:
             tone = [-102, -102, -68, 102];
             break;
-        case 'earlyMorning':
+        case 1:
             tone = [-68, -68, 0, 0];
             break;
-        case 'morning':
+        case 2:
             tone = [0, 0, 0, 0];
             break;
-        case 'day':
+        case 3:
             tone = [34, 34, 34, 0];
             break;
-        case 'evening':
+        case 4:
             tone = [68, -34, -34, 0];
             break;
-        case 'night':
+        case 5:
             tone = [-68, -68, 0, 68];
             break;
     }
-    $gameScreen.startTint(tone, Math.floor(60 * 5 / (this._timeAutoAdd / 10)));
+    if (this.getWeatherTypeId() !== 0) {
+        tone[0] > 0 ? tone[0] /= 7 : tone[0] -= 14;
+        tone[1] > 0 ? tone[1] /= 7 : tone[1] -= 14;
+        tone[2] > 0 ? tone[2] /= 7 : tone[1] -= 14;
+        tone[3] === 0 ? tone[3] = 68 : tone[3] += 14;
+    }
+    $gameScreen.startTint(tone, swift ? 0 : Math.floor(60 * 5 / (this._timeAutoAdd / 10)));
+};
+
+Game_Chronus.prototype.controlWeather = function (force) {
+    if (!force && Math.random() * 10 > this._weatherCounter - 7) {
+        this._weatherCounter++;
+    } else {
+        this._weatherCounter = 0;
+        if (Math.random() * 10 > 7) {
+            this._weatherType  = this.isSnowLand() ? 3 : Math.random() * 10 > 6 ? 2 : 1;
+            this._weatherPower = Math.floor(Math.random() * 10);
+        } else {
+            this._weatherType  = 0;
+            this._weatherPower = 0;
+        }
+    }
+    this.refreshWeather(false);
+};
+
+Game_Chronus.prototype.refreshWeather = function (swift) {
+    this.isEnableWeather() ? this.setWeather(swift) : $gameScreen.changeWeather(0, 0, 0);
+};
+
+Game_Chronus.prototype.setWeather = function (swift) {
+    $gameScreen.changeWeather(this.getWeatherType(), this._weatherPower,
+        swift ? 0 : Math.floor(60 * 5 / (this._timeAutoAdd / 10)));
 };
 
 Game_Chronus.prototype.disableTint = function () {
@@ -478,6 +541,34 @@ Game_Chronus.prototype.enableTint = function () {
 
 Game_Chronus.prototype.isEnableTint = function () {
     return !this._disableTint && !$gameMap.isDisableTint();
+};
+
+Game_Chronus.prototype.disableWeather = function () {
+    this._disableWeather = true;
+    this.refreshWeather(true);
+};
+
+Game_Chronus.prototype.enableWeather = function () {
+    this._disableWeather = false;
+    this.refreshWeather(true);
+};
+
+Game_Chronus.prototype.isEnableWeather = function () {
+    return !this._disableWeather && !$gameMap.isDisableWeather();
+};
+
+Game_Chronus.prototype.setSnowLand = function () {
+    this._weatherSnowLand = true;
+    this.refreshWeather(true);
+};
+
+Game_Chronus.prototype.resetSnowLand = function () {
+    this._weatherSnowLand = false;
+    this.refreshWeather(true);
+};
+
+Game_Chronus.prototype.isSnowLand = function () {
+    return this._weatherSnowLand;
 };
 
 Game_Chronus.prototype.onBattleEnd = function () {
@@ -514,6 +605,10 @@ Game_Chronus.prototype.isShowingCalendar = function () {
     return this._calendarVisible;
 };
 
+Game_Chronus.prototype.isSnowLand = function () {
+    return this._weatherSnowLand;
+};
+
 Game_Chronus.prototype.addTime = function (value) {
     if (arguments.length === 0) value = this._timeAutoAdd;
     this._timeMeter += value;
@@ -521,21 +616,21 @@ Game_Chronus.prototype.addTime = function (value) {
         this.addDay();
         this._timeMeter -= 60 * 24;
     }
-    this.demandRefresh();
+    this.demandRefresh(false);
 };
 
 Game_Chronus.prototype.setTime = function (hour, minute) {
     var time = hour * 60 + minute;
     if (this._timeMeter > time) this.addDay();
     this._timeMeter = time;
-    this.demandRefresh();
-    $gameScreen.toSwiftTint();
+    this.demandRefresh(true);
+
 };
 
 Game_Chronus.prototype.addDay = function (value) {
     if (arguments.length === 0) value = 1;
     this._dayMeter += value;
-    this.demandRefresh();
+    this.demandRefresh(false);
 };
 
 Game_Chronus.prototype.setDay = function (year, month, day) {
@@ -546,14 +641,16 @@ Game_Chronus.prototype.setDay = function (year, month, day) {
     }
     newDay += day - 1;
     this._dayMeter = newDay;
-    this.demandRefresh();
-    $gameScreen.toSwiftTint();
+    this.demandRefresh(true);
 };
 
-Game_Chronus.prototype.demandRefresh = function () {
+Game_Chronus.prototype.demandRefresh = function (effectRefreshFlg) {
     this._demandRefresh = true;
-    this.updateTint();
     this.setGameVariable();
+    if (effectRefreshFlg) {
+        this.refreshTint(true);
+        this.controlWeather(true);
+    }
 };
 
 Game_Chronus.prototype.getDaysOfWeek = function () {
@@ -578,6 +675,8 @@ Game_Chronus.prototype.setGameVariable = function () {
     this.setGameVariableSub('曜日名のゲーム変数', this.getWeekName());
     this.setGameVariableSub('時のゲーム変数', this.getHour());
     this.setGameVariableSub('分のゲーム変数', this.getMinute());
+    this.setGameVariableSub('時間帯IDのゲーム変数', this.getTimeZone());
+    this.setGameVariableSub('天候IDのゲーム変数', this.getWeatherTypeId());
 };
 
 Game_Chronus.prototype.setGameVariableSub = function (paramName, value) {
@@ -657,6 +756,24 @@ Game_Chronus.prototype.getDateFormat = function(index) {
         return this.getValuePadding(this.getMinute(), 2);
     }.bind(this));
     return format;
+};
+
+Game_Chronus.prototype.getTimeZone = function () {
+    return this.isHourInRange(0, 4)   ? 0 :
+           this.isHourInRange(5, 6)   ? 1 :
+           this.isHourInRange(7, 11)  ? 2 :
+           this.isHourInRange(12, 16) ? 3 :
+           this.isHourInRange(17, 18) ? 4 :
+           this.isHourInRange(19, 21) ? 5 :
+           this.isHourInRange(22, 24) ? 0 : null;
+};
+
+Game_Chronus.prototype.getWeatherTypeId = function () {
+    return this._weatherType;
+};
+
+Game_Chronus.prototype.getWeatherType = function () {
+    return Game_Chronus.weatherTypes[this.getWeatherTypeId()];
 };
 
 Game_Chronus.prototype.getValuePadding = function(value, digit, padChar) {
