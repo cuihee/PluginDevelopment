@@ -271,8 +271,10 @@
     var _Game_Interpreter_command236 = Game_Interpreter.prototype.command236;
     Game_Interpreter.prototype.command236 = function() {
         var result = _Game_Interpreter_command236.call(this);
-        if (!$gameParty.inBattle())
+        if (!$gameParty.inBattle()) {
             $gameSystem.chronus()._weatherType = Game_Chronus.weatherTypes.indexOf(this._params[0]);
+            $gameSystem.chronus()._weatherPower = this._params[1];
+        }
         return result;
     };
 
