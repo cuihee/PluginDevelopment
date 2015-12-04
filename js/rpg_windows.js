@@ -20,7 +20,7 @@ Window_Base.prototype.initialize = function(x, y, width, height) {
     this.move(x, y, width, height);
     this.updatePadding();
     this.updateBackOpacity();
-    this.updateTint();
+    this.updateEffect();
     this.createContents();
     this._opening = false;
     this._closing = false;
@@ -86,7 +86,7 @@ Window_Base.prototype.fittingHeight = function(numLines) {
     return numLines * this.lineHeight() + this.standardPadding() * 2;
 };
 
-Window_Base.prototype.updateTint = function() {
+Window_Base.prototype.updateEffect = function() {
     var tone = $gameSystem.windowTone();
     this.setTone(tone[0], tone[1], tone[2]);
 };
@@ -108,7 +108,7 @@ Window_Base.prototype.resetTextColor = function() {
 
 Window_Base.prototype.update = function() {
     Window.prototype.update.call(this);
-    this.updateTint();
+    this.updateEffect();
     this.updateOpen();
     this.updateClose();
     this.updateBackgroundDimmer();
