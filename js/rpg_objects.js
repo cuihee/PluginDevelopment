@@ -795,7 +795,7 @@ Game_Screen.prototype.changeWeather = function(type, power, duration) {
 Game_Screen.prototype.update = function() {
     this.updateFadeOut();
     this.updateFadeIn();
-    this.updateEffect();
+    this.updateTone();
     this.updateFlash();
     this.updateShake();
     this.updateZoom();
@@ -819,7 +819,7 @@ Game_Screen.prototype.updateFadeIn = function() {
     }
 };
 
-Game_Screen.prototype.updateEffect = function() {
+Game_Screen.prototype.updateTone = function() {
     if (this._toneDuration > 0) {
         var d = this._toneDuration;
         for (var i = 0; i < 4; i++) {
@@ -1062,7 +1062,7 @@ Game_Picture.prototype.erase = function() {
 
 Game_Picture.prototype.update = function() {
     this.updateMove();
-    this.updateEffect();
+    this.updateTone();
     this.updateRotation();
 };
 
@@ -1078,7 +1078,7 @@ Game_Picture.prototype.updateMove = function() {
     }
 };
 
-Game_Picture.prototype.updateEffect = function() {
+Game_Picture.prototype.updateTone = function() {
     if (this._toneDuration > 0) {
         var d = this._toneDuration;
         for (var i = 0; i < 4; i++) {

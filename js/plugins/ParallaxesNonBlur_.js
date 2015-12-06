@@ -38,24 +38,13 @@
 
     var _SpriteSet_Map_updateParallax = Spriteset_Map.prototype.updateParallax;
     Spriteset_Map.prototype.updateParallax = function() {
-        this._parallax.visible = !$gameMap._parallaxZero;
-        this._parallaxNonBlur.visible = $gameMap._parallaxZero;
-        if ($gameMap._parallaxZero) {
-            this._parallax.bitmap = null;
-            if (this._parallaxName !== $gameMap.parallaxName()) {
-                this._parallaxName = $gameMap.parallaxName();
-                this._parallaxNonBlur.bitmap = ImageManager.loadParallax(this._parallaxName);
-            }
-            if (this._parallaxNonBlur.bitmap) {
-                this._parallaxNonBlur.x = 0;
-                this._parallaxNonBlur.y = 0;
-                this._parallaxNonBlur.setFrame($gameMap.parallaxOx(), $gameMap.parallaxOy(),
-                    Graphics.width, Graphics.height);
-            }
-        } else {
-            this._parallaxNonBlur.bitmap = null;
-            _SpriteSet_Map_updateParallax.call(this);
+        if (this._parallax.tilingTexture != null) {
+            this._parallaxZero = $gameMap._parallaxZero;
+            this._parallax.tilingTexture.scaleMode =
+                $gameMap._parallaxZero ? PIXI.scaleModes.NEAREST : PIXI.scaleModes.NEAREST;
+            this._parallax.texture.needsUpdate = true;
+            this._parallax.texture.baseTexture.scaleMode = PIXI.scaleModes.NEAREST;
         }
-
+        _SpriteSet_Map_updateParallax.call(this);
     };
 })();

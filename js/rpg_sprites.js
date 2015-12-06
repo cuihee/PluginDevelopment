@@ -1916,7 +1916,7 @@ Sprite_Picture.prototype.update = function() {
         this.updateOrigin();
         this.updatePosition();
         this.updateScale();
-        this.updateEffect();
+        this.updateTone();
         this.updateOther();
     }
 };
@@ -1960,7 +1960,7 @@ Sprite_Picture.prototype.updateScale = function() {
     this.scale.y = picture.scaleY() / 100;
 };
 
-Sprite_Picture.prototype.updateEffect = function() {
+Sprite_Picture.prototype.updateTone = function() {
     var picture = this.picture();
     if (picture.tone()) {
         this.setColorTone(picture.tone());
