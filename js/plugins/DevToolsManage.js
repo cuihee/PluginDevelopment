@@ -85,9 +85,6 @@ var $gameCurrentWindow = null;
 
 (function () {
     var paramName = 'DevToolsManage';
-    var alwaysOnTop = PluginManager.getParamBoolean(paramName, 'AlwaysOnTop', '常に前面表示');
-    var startupDevTool = PluginManager.getParamString(paramName, 'StartupDevTool', '開始時に起動').toUpperCase();
-    var devToolsPosition = PluginManager.getParamArrayNumber(paramName, 'DevToolsPosition', 'デベロッパツール表示位置');
 
     PluginManager.getParamBoolean = function(pluginName, paramEngName, paramJpgName) {
         var value = this.getParamOther(pluginName, paramEngName, paramJpgName);
@@ -100,7 +97,7 @@ var $gameCurrentWindow = null;
     };
 
     PluginManager.getParamArrayNumber = function (pluginName, paramEngName, paramJpgName) {
-        var values = PluginManager.getParamArrayString(pluginName, paramEngName, paramJpgName);
+        var values = this.getParamArrayString(pluginName, paramEngName, paramJpgName);
         for (var i = 0; i < values.length; i++) {
             values[i] = parseInt(values[i], 10) || 0;
         }
@@ -117,6 +114,10 @@ var $gameCurrentWindow = null;
         if (value == null) value = this.parameters(pluginName)[paramJpgName];
         return value;
     };
+
+    var alwaysOnTop = PluginManager.getParamBoolean(paramName, 'AlwaysOnTop', '常に前面表示');
+    var startupDevTool = PluginManager.getParamString(paramName, 'StartupDevTool', '開始時に起動');
+    var devToolsPosition = PluginManager.getParamArrayNumber(paramName, 'DevToolsPosition', 'デベロッパツール表示位置');
 
     //=============================================================================
     // SceneManager

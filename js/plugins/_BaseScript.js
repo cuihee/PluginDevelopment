@@ -76,9 +76,12 @@
     };
 
     var getParamOther = function(paramNames) {
-        return paramNames.some(function(paramName) {
-            return PluginManager.parameters(pluginName)[paramName];
-        });
+        if (!Array.isArray(paramNames)) paramNames = [paramNames];
+        for (var i = 0; i < paramNames.length; i++) {
+            var name = PluginManager.parameters(pluginName)[paramNames[i]];
+            if (name) return name;
+        }
+        return null;
     };
 
     var getParamArrayString = function (paramNames) {
