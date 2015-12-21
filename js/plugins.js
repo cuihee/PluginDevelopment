@@ -15,5 +15,6 @@ var $plugins =
 {"name":"ItemNameEscape","status":true,"description":"項目名の制御文字プラグイン","parameters":{}},
 {"name":"PictureVariableSetting","status":true,"description":"ピクチャの変数設定プラグイン","parameters":{"初期値":"ON"}},
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{}},
-{"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}}
+{"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}},
+{"name":"ChangeWindowTouchPolicy","status":true,"description":"プラグイン名称が未入力です。","parameters":{"パラメータ":"デフォルト値"}}
 ];
