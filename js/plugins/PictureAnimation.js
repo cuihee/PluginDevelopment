@@ -6,7 +6,10 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+<<<<<<< HEAD
 // 1.1.2 2015/12/24 クロスフェードによる画像切替に対応しました
+=======
+>>>>>>> origin/gh-pages
 // 1.1.1 2015/12/21 ピクチャのファイル名を連番方式で指定できる機能を追加
 //                  アニメーションの強制終了の機能を追加
 // 1.0.0 2015/12/19 初版
@@ -42,6 +45,7 @@
  *  （パラメータの間は半角スペースで区切る）
  *
  *  PA_INIT or
+<<<<<<< HEAD
  *  ピクチャのアニメーション準備 [セル数] [フレーム数] [セル配置方法] [フェード時間] :
  *  　このコマンドの次に実行される「ピクチャの表示」をアニメーション対象にします。
  *  　セル数　　　：アニメーションするセル画の数
@@ -49,6 +53,14 @@
  *  　セル配置方向：セルの配置（縦 or 横 or 連番）
  *  　フェード時間：画像切替に掛かるフレーム数（0にすると一瞬で切り替わります）
  *  使用例：PA_INIT 4 10 連番 20
+=======
+ *  ピクチャのアニメーション準備 [セル数] [フレーム数] [セル配置方法] :
+ *  　このコマンドの次に実行される「ピクチャの表示」をアニメーション対象にします。
+ *  　セル数　　　：アニメーションするセル画の数
+ *  　フレーム数　：アニメーションする間隔のフレーム数
+ *  　セル配置方向：セルの配置（縦 or 横 or 連番）※省略すると縦になります。
+ *  　例：PA_INIT 4 10 連番
+>>>>>>> origin/gh-pages
  *
  *  PA_START or
  *  ピクチャのアニメーション開始 [ピクチャ番号] [アニメーションタイプ]
@@ -79,12 +91,21 @@
  *  　現在表示しているセルでアニメーションが止まります。
  *  使用例：PA_STOP_FORCE 1
  *
+ *  PA_STOP_FORCE or
+ *  ピクチャのアニメーション強制終了 [ピクチャ番号]
+ *  　指定したピクチャ番号のピクチャをアニメーションを終了します。
+ *  　現在表示しているセルでアニメーションが止まります。
+ *
  *  PA_SET_CELL or
  *  ピクチャのアニメーションセル設定 [ピクチャ番号] [セル番号] [ウェイトあり]
  *  　アニメーションのセルを直接設定します。（開始位置は 1 です）
  *  　任意のタイミングでアニメーションしたい場合に有効です。
+<<<<<<< HEAD
  *  　ウェイトありを設定すると、クロスフェード中はイベントの実行を待機します。
  *  使用例：PA_SET_CELL 1 3 ウェイトあり
+=======
+ *  　セル番号を指定しなかった場合は、アニメーションを一つ先に進めます。
+>>>>>>> origin/gh-pages
  *
  *  PA_PROG_CELL or
  *  ピクチャのアニメーションセル進行 [ピクチャ番号] [ウェイトあり]
@@ -173,11 +194,18 @@
         switch (getCommandName(command)) {
             case 'PA_INIT' :
             case 'ピクチャのアニメーション準備':
+<<<<<<< HEAD
                 cellNumber   = getArgNumber(args[0], 1, 99);
                 frameNumber  = getArgNumber(args[1], 1, 9999);
                 direction    = getArgString(args[2], true) || '縦';
                 fadeDuration = getArgNumber(args[3], 0, 9999) || 0;
                 $gameScreen.setPicturesAnimation(cellNumber, frameNumber, direction, fadeDuration);
+=======
+                cellNumber  = getArgNumber(args[0], 1, 99);
+                frameNumber = getArgNumber(args[1], 1, 9999);
+                direction   = getArgString(args[2], true) || '縦';
+                $gameScreen.setPicturesAnimation(cellNumber, frameNumber, direction);
+>>>>>>> origin/gh-pages
                 break;
             case 'PA_START' :
             case 'ピクチャのアニメーション開始':
@@ -208,6 +236,7 @@
             case 'PA_SET_CELL' :
             case 'ピクチャのアニメーションセル設定':
                 pictureNum    = getArgNumber(args[0], 1, 100);
+<<<<<<< HEAD
                 cellNumber    = getArgNumber(args[1], 0, 100);
                 wait          = getArgString(args[2]);
                 picture       = $gameScreen.picture($gameScreen.realPictureId(pictureNum));
@@ -225,6 +254,11 @@
                     if (wait === 'ウェイトあり' || wait.toUpperCase() === 'WAIT') this.wait(picture._fadeDuration);
                     picture.addCellCount();
                 }
+=======
+                cellNumber    = getArgNumber(args[1], 0, 100) - 1;
+                picture       = $gameScreen.picture($gameScreen.realPictureId(pictureNum));
+                if (picture) cellNumber === -1 ? picture.addCellCount() : picture.cell = cellNumber;
+>>>>>>> origin/gh-pages
                 break;
         }
     };
@@ -270,6 +304,7 @@
     };
 
     Game_Picture.prototype.initAnimation = function() {
+<<<<<<< HEAD
         this._cellNumber        = 1;
         this._frameNumber       = 1;
         this._cellCount         = 0;
@@ -280,6 +315,15 @@
         this._fadeDuration      = 0;
         this._fadeDurationCount = 0;
         this._prevCellCount     = 0;
+=======
+        this._cellNumber    = 1;
+        this._frameNumber   = 1;
+        this._cellCount     = 0;
+        this._frameCount    = 0;
+        this._animationType = 0;
+        this._loopFlg       = false;
+        this._direction     = '';
+>>>>>>> origin/gh-pages
     };
 
     /**
@@ -323,6 +367,7 @@
         }
     };
 
+<<<<<<< HEAD
     Game_Picture.prototype.updateFading = function() {
         this._fadeDurationCount--;
     };
@@ -343,6 +388,19 @@
         this._cellCount    = 0;
         this._direction    = direction;
         this._fadeDuration = fadeDuration;
+=======
+    Game_Picture.prototype.addCellCount = function() {
+        this._cellCount = (this._cellCount + 1) %
+            (this._animationType === 2 ? (this._cellNumber - 1) * 2 : this._cellNumber);
+    };
+
+    Game_Picture.prototype.setAnimationInit = function(cellNumber, frameNumber, direction) {
+        this._cellNumber  = cellNumber;
+        this._frameNumber = frameNumber;
+        this._frameCount  = 0;
+        this._cellCount   = 0;
+        this._direction   = direction;
+>>>>>>> origin/gh-pages
     };
 
     Game_Picture.prototype.startAnimation = function(animationType, loopFlg) {
@@ -378,15 +436,20 @@
     var _Sprite_Picture_update = Sprite_Picture.prototype.update;
     Sprite_Picture.prototype.update = function() {
         _Sprite_Picture_update.call(this);
+<<<<<<< HEAD
         if (this.visible && this.isBitmapReady()) {
             this.updateAnimation(this, this.picture().cell);
             this.updateFading();
         }
+=======
+        if (this.visible && this.isBitmapReady()) this.updateAnimation();
+>>>>>>> origin/gh-pages
     };
 
     var _Sprite_Picture_updateBitmap = Sprite_Picture.prototype.updateBitmap;
     Sprite_Picture.prototype.updateBitmap = function() {
         _Sprite_Picture_updateBitmap.call(this);
+<<<<<<< HEAD
         if (this.picture() == null) {
             this._bitmaps = null;
             this._prevSprite.bitmap = null;
@@ -442,6 +505,49 @@
         this._bitmapReady = false;
     };
 
+=======
+        var picture = this.picture();
+        if (!picture) this._bitmap = null;
+    };
+
+    Sprite_Picture.prototype.updateAnimation = function() {
+        switch (this.picture()._direction) {
+            case '連番':
+            case 'N':
+                this.bitmap = this._bitmaps[this.picture().cell];
+                this.setFrame(0, 0, this.bitmap.width, this.bitmap.height);
+                break;
+            case '縦':
+            case 'V':
+                var height = this.bitmap.height / this.picture()._cellNumber;
+                var y      = this.picture().cell * height;
+                this.setFrame(0, y, this.bitmap.width, height);
+                break;
+            case '横':
+            case 'H':
+                var width = this.bitmap.width / this.picture()._cellNumber;
+                var x     = this.picture().cell * width;
+                this.setFrame(x, 0, width, this.bitmap.height);
+                break;
+        }
+    };
+
+    var _Sprite_Picture_loadBitmap = Sprite_Picture.prototype.loadBitmap;
+    Sprite_Picture.prototype.loadBitmap = function() {
+        _Sprite_Picture_loadBitmap.call(this);
+        var cellNumber = this.picture()._cellNumber;
+        var dir = this.picture()._direction;
+        if (cellNumber > 1 && (dir === '連番' || dir === 'N')) {
+            this._bitmaps = [this.bitmap];
+            for (var i = 1; i < cellNumber; i++) {
+                var filename = this._pictureName.substr(0, this._pictureName.length - 2) + i.padZero(2);
+                this._bitmaps[i] = ImageManager.loadPicture(filename);
+            }
+        }
+        this._bitmapReady = false;
+    };
+
+>>>>>>> origin/gh-pages
     Sprite_Picture.prototype.isBitmapReady = function() {
         if (this._bitmapReady) return true;
         var dir = this.picture()._direction;
