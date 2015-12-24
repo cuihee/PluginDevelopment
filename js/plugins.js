@@ -15,10 +15,6 @@ var $plugins =
 {"name":"PictureVariableSetting","status":true,"description":"ピクチャの変数設定プラグイン","parameters":{"初期値":"ON"}},
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}},
-<<<<<<< HEAD
 {"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
 {"name":"TkoolMV_PluginCommandEditor","status":true,"description":"プラグインコマンドエディタ起動プラグイン","parameters":{"エディタ表示位置":"0,0,1200,800","起動キー":"F7"}}
-=======
-{"name":"ChangeWindowTouchPolicy","status":true,"description":"プラグイン名称が未入力です。","parameters":{"パラメータ":"デフォルト値"}}
->>>>>>> origin/gh-pages
 ];
