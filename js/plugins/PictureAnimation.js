@@ -322,7 +322,7 @@
         this._frameCount = (this._frameCount + 1) % this._frameNumber;
         if (this._frameCount === 0) {
             this.addCellCount();
-            if ((this.cell === 0 && !this._loopFlg)) {
+            if (this.cell === 0 && !this._loopFlg) {
                 this._animationFlg  = false;
             }
         }
