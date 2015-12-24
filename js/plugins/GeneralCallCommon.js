@@ -1,12 +1,12 @@
 //=============================================================================
-// ${NAME}.js
+// GeneralCallCommon.js
 // ----------------------------------------------------------------------------
 // Copyright (c) 2015 Triacontane
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
-// 1.0.0 ${DATE} 初版
+// 1.0.0 2015/12/24 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
 // [Twitter]: https://twitter.com/triacontane/
@@ -30,14 +30,18 @@
  * This plugin is released under the MIT License.
  */
 /*:ja
- * @plugindesc プラグイン名称が未入力です。
+ * @plugindesc 総合的コモンイベント呼び出しプラグイン
  * @author トリアコンタン
  *
  * @param パラメータ
  * @desc パラメータ説明
  * @default デフォルト値
  *
- * @help プラグイン説明が未入力です。
+ * @help 様々なシチュエーションでコモンイベントを呼び出します。
+ * 1. 任意のキーが押されたとき
+ * 2. メニュー画面を閉じたとき(メニュー終了)
+ * 3. ロードが完了したとき(ロード終了)
+ * 3. 戦闘が終了したとき
  *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
@@ -50,33 +54,32 @@
  *  についても制限はありません。
  *  このプラグインはもうあなたのものです。
  */
-(function() {
+(function () {
     'use strict';
-    var pluginName = '${NAME}';
+    var pluginName = 'GeneralCallCommon';
 
     //=============================================================================
     // ローカル関数
     //  プラグインパラメータやプラグインコマンドパラメータの整形やチェックをします
     //=============================================================================
-    var getParamString = function(paramNames) {
+    var getParamString = function (paramNames) {
         var value = getParamOther(paramNames);
         return value == null ? '' : value;
     };
 
-    var getParamNumber = function(paramNames, min, max) {
+    var getParamNumber = function (paramNames, min, max) {
         var value = getParamOther(paramNames);
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
         return (parseInt(value, 10) || 0).clamp(min, max);
     };
 
-    var getParamBoolean = function(paramNames) {
+    var getParamBoolean = function (paramNames) {
         var value = getParamOther(paramNames);
         return (value || '').toUpperCase() == 'ON';
     };
 
-    var getParamOther = function(paramNames) {
-        if (!Array.isArray(paramNames)) paramNames = [paramNames];
+    var getParamOther = function (paramNames) {
         for (var i = 0; i < paramNames.length; i++) {
             var name = PluginManager.parameters(pluginName)[paramNames[i]];
             if (name) return name;
@@ -112,43 +115,18 @@
         return (parseInt(convertEscapeCharacters(arg), 10) || 0).clamp(min, max);
     };
 
-    var convertEscapeCharacters = function(text) {
-        if (text == null) text = '';
-        text = text.replace(/\\/g, '\x1b');
-        text = text.replace(/\x1b\x1b/g, '\\');
-        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1], 10));
-        }.bind(window));
-        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1], 10));
-        }.bind(window));
-        text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
-            var n = parseInt(arguments[1]);
-            var actor = n >= 1 ? $gameActors.actor(n) : null;
-            return actor ? actor.name() : '';
-        }.bind(window));
-        text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
-            var n = parseInt(arguments[1]);
-            var actor = n >= 1 ? $gameParty.members()[n - 1] : null;
-            return actor ? actor.name() : '';
-        }.bind(window));
-        text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
-        return text;
-    };
-
     //=============================================================================
     // Game_Interpreter
     //  プラグインコマンドを追加定義します。
     //=============================================================================
-    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-    Game_Interpreter.prototype.pluginCommand = function(command, args) {
+    var _Game_Interpreter_pluginCommand      = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function (command, args) {
         _Game_Interpreter_pluginCommand.apply(this, arguments);
-        /*
         try {
-            this.pluginCommand${NAME}(command, args);
+            this.pluginCommandGeneralCallCommon(command, args);
         } catch (e) {
             if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
-                var window = require('nw.gui').Window.get();
+                var window  = require('nw.gui').Window.get();
                 var devTool = window.showDevTools();
                 devTool.moveTo(0, 0);
                 devTool.resizeTo(Graphics.width, Graphics.height);
@@ -159,30 +137,28 @@
             console.log('- コマンド引数 : ' + args);
             console.log('- エラー原因   : ' + e.toString());
         }
-        */
     };
-    /*
-    Game_Interpreter.prototype.pluginCommand${NAME} = function(command, args) {
+
+    Game_Interpreter.prototype.pluginCommandGeneralCallCommon = function (command, args) {
         switch (getCommandName(command)) {
             case 'XXXXX' :
                 break;
         }
     };
-    +/
 
     //=============================================================================
-    // Game_${NAME}
-    //  ${NAME}
+    // Game_GeneralCallCommon
+    //  GeneralCallCommon
     //=============================================================================
-    /*
-    function Game_${NAME}() {
+     /*
+    function Game_GeneralCallCommon() {
         this.initialize.apply(this, arguments);
     }
 
-    Game_${NAME}.prototype = Object.create(Game_${NAME}_Parent.prototype);
-    Game_${NAME}.prototype.constructor = Game_${NAME};
+    Game_GeneralCallCommon.prototype = Object.create(Game_GeneralCallCommon_Parent.prototype);
+    Game_GeneralCallCommon.prototype.constructor = Game_GeneralCallCommon;
 
-    Game_${NAME}.prototype.initialize = function() {
+    Game_GeneralCallCommon.prototype.initialize = function() {
     };
     */
 })();
