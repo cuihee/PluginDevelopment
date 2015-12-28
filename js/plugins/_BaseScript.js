@@ -112,6 +112,12 @@
         return (parseInt(convertEscapeCharacters(arg), 10) || 0).clamp(min, max);
     };
 
+    var parseIntStrict = function(value, errorMessage) {
+        var result = parseInt(value, 10);
+        if (isNaN(result)) throw Error('指定した値[' + value + ']が数値ではありません。' + errorMessage);
+        return result;
+    };
+
     var convertEscapeCharacters = function(text) {
         if (text == null) text = '';
         text = text.replace(/\\/g, '\x1b');
