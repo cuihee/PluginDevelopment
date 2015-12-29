@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.2 2015/12/20 長押しイベント発生時に1秒間のインターバルを設定するよう仕様変更
+// 1.1.1 2015/12/10 ピクチャを消去後にマウスオーバーするとエラーになる現象を修正
 // 1.1.0 2015/11/23 コモンイベントを呼び出した対象のピクチャ番号を特定する機能を追加
 //                  設定で透明色を考慮する機能を追加
 //                  トリガーとして「右クリック」や「長押し」を追加
@@ -25,7 +27,7 @@
  * @default OFF
  *
  * @param ピクチャ番号の変数番号
- * @desc コモンイベント呼び出し時にピクチャ番号を格納するゲーム変数の番号
+ * @desc コモンイベント呼び出し時にピクチャ番号を格納するゲーム変数の番号。
  * @default 0
  *
  * @help ピクチャをクリックすると、指定したコモンイベントが
@@ -58,7 +60,7 @@
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
  *  についても制限はありません。
- *  ただし、ヘッダのライセンス表示は残してください。
+ *  このプラグインはもうあなたのものです。
  */
 /*:
  * @plugindesc Clickable picture plugin
@@ -125,13 +127,13 @@
     };
 
     PluginManager.getArgString = function (index, args) {
-        return PluginManager.convertEscapeCharacters(args[index]);
+        return this.convertEscapeCharacters(args[index]);
     };
 
     PluginManager.getArgNumber = function (index, args, min, max) {
         if (arguments.length <= 2) min = -Infinity;
         if (arguments.length <= 3) max = Infinity;
-        return (parseInt(PluginManager.convertEscapeCharacters(args[index]), 10) || 0).clamp(min, max);
+        return (parseInt(this.convertEscapeCharacters(args[index]), 10) || 0).clamp(min, max);
     };
 
     PluginManager.convertEscapeCharacters = function(text) {
@@ -152,6 +154,16 @@
         }.bind(this));
         text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
         return text;
+    };
+
+    PluginManager.actorName = function(n) {
+        var actor = n >= 1 ? $gameActors.actor(n) : null;
+        return actor ? actor.name() : '';
+    };
+
+    PluginManager.partyMemberName = function(n) {
+        var actor = n >= 1 ? $gameParty.members()[n - 1] : null;
+        return actor ? actor.name() : '';
     };
 
     //=============================================================================
@@ -223,11 +235,13 @@
         var commonId = $gameTemp._pictureCommonId;
         var event = $dataCommonEvents[commonId];
         if (commonId > 0 && !this.isEventRunning() && event) {
+            var gameValueNum = PluginManager.getParamNumber(pluginName,
+                'GameVariablePictureNum', 'ピクチャ番号の変数番号', 0, 5000);
+            if (gameValueNum !== 0) $gameVariables.setValue(gameValueNum, $gameTemp._pictureNum);
             this._interpreter.setup(event.list);
-            $gameTemp._pictureCommonId = 0;
-            return true;
         }
-        return false;
+        $gameTemp._pictureCommonId = 0;
+        $gameTemp._pictureNum = 0;
     };
 
     //=============================================================================
@@ -303,14 +317,14 @@
     Sprite_Picture.prototype.initialize = function(pictureId) {
         _Sprite_Picture_initialize.call(this, pictureId);
         this._triggerHandler    = [];
-        this._triggerHandler[1]        = this.isTriggered.bind(this);
-        this._triggerHandler[2]        = this.isCancelled.bind(this);
-        this._triggerHandler[3]        = this.isLongPressed.bind(this);
-        this._triggerHandler[4]        = this.isOnFocus.bind(this);
-        this._triggerHandler[5]        = this.isOutFocus.bind(this);
-        this._triggerHandler[6]        = this.isReleased.bind(this);
-        this._triggerHandler[7]        = this.isRepeated.bind(this);
-        this._triggerHandler[8]        = this.isPressed.bind(this);
+        this._triggerHandler[1]        = this.isTriggered;
+        this._triggerHandler[2]        = this.isCancelled;
+        this._triggerHandler[3]        = this.isLongPressed;
+        this._triggerHandler[4]        = this.isOnFocus;
+        this._triggerHandler[5]        = this.isOutFocus;
+        this._triggerHandler[6]        = this.isReleased;
+        this._triggerHandler[7]        = this.isRepeated;
+        this._triggerHandler[8]        = this.isPressed;
         this._onMouse                  = false;
         this._outMouse                 = false;
         this._wasOnMouse               = false;
@@ -323,8 +337,10 @@
         _Sprite_update.call(this);
         this._onMouse  = false;
         this._outMouse = false;
+        var commandIds = $gameScreen._pictureCidArray[$gameScreen.realPictureId(this._pictureId)];
+        if (commandIds == null || (commandIds[4] == null && commandIds[5] == null)) return;
         if (TouchInput.isMoved()) {
-            if (this.isTouchPosInRect() && this.isNotTransparent()) {
+            if (this.isTouchable() && this.isTouchPosInRect() && !this.isTransparent()) {
                 if (!this._wasOnMouse) {
                     this._onMouse    = true;
                     this._wasOnMouse = true;
@@ -342,26 +358,21 @@
         var commandIds = $gameScreen._pictureCidArray[$gameScreen.realPictureId(this._pictureId)];
         if (commandIds == null) return;
         for (var i = 1; i <= this._triggerHandler.length; i++) {
-            if (commandIds[i] != null && this._triggerHandler[i]() && (i === 5 || i === 4 || this.isNotTransparent())) {
+            if (commandIds[i] != null && this._triggerHandler[i].call(this) && (i === 5 || i === 4 || !this.isTransparent())) {
+                if (i === 3) TouchInput._pressedTime = -60;
                 $gameTemp._pictureCommonId = commandIds[i];
                 $gameTemp._pictureNum = this._pictureId;
             }
-
         }
     };
 
-    Sprite_Picture.prototype.isNotTransparent = function () {
-        if (!this._transparentConsideration) return true;
+    Sprite_Picture.prototype.isTransparent = function () {
+        if (!this._transparentConsideration) return false;
         var bx = (TouchInput.x - this.x) / this.scale.x + this.anchor.x * this.width;
         var by = (TouchInput.y - this.y) / this.scale.y + this.anchor.y * this.height;
-        var alpha = this.bitmap.getAlphaPixel(bx, by);
-        return alpha !== 0;
+        return this.bitmap.getAlphaPixel(bx, by) === 0;
     };
 
-    //=============================================================================
-    // Sprite_Picture
-    //  タッチ操作を可能にする共通部分
-    //=============================================================================
     Sprite_Picture.prototype.screenWidth = function() {
         return (this.width || 0) * this.scale.x;
     };
@@ -410,27 +421,27 @@
     };
 
     Sprite_Picture.prototype.isTriggered = function() {
-        return this.isTouchEvent(TouchInput.isTriggered());
+        return this.isTouchEvent(TouchInput.isTriggered);
     };
 
     Sprite_Picture.prototype.isCancelled = function() {
-        return this.isTouchEvent(TouchInput.isCancelled());
+        return this.isTouchEvent(TouchInput.isCancelled);
     };
 
     Sprite_Picture.prototype.isLongPressed = function() {
-        return this.isTouchEvent(TouchInput.isLongPressed());
+        return this.isTouchEvent(TouchInput.isLongPressed);
     };
 
     Sprite_Picture.prototype.isPressed = function() {
-        return this.isTouchEvent(TouchInput.isPressed());
+        return this.isTouchEvent(TouchInput.isPressed);
     };
 
     Sprite_Picture.prototype.isReleased = function() {
-        return this.isTouchEvent(TouchInput.isReleased());
+        return this.isTouchEvent(TouchInput.isReleased);
     };
 
     Sprite_Picture.prototype.isRepeated = function() {
-        return this.isTouchEvent(TouchInput.isRepeated());
+        return this.isTouchEvent(TouchInput.isRepeated);
     };
 
     Sprite_Picture.prototype.isOnFocus = function() {
@@ -441,8 +452,8 @@
         return this._outMouse;
     };
 
-    Sprite_Picture.prototype.isTouchEvent = function(triggerResult) {
-        return this.isTouchable && triggerResult && this.isTouchPosInRect();
+    Sprite_Picture.prototype.isTouchEvent = function(triggerFunc) {
+        return this.isTouchable() && triggerFunc.call(TouchInput) && this.isTouchPosInRect();
     };
 
     //=============================================================================

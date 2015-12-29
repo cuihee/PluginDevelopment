@@ -122,7 +122,7 @@
     Game_Interpreter.prototype.pluginCommand = function (command, args) {
         _Game_Interpreter_pluginCommand.call(this, command, args);
         if ((command || '').toUpperCase() === 'VIBRATION' || command === 'バイブレーション') {
-            navigator.vibrate(3000);
+            if(navigator && navigator.vibrate) navigator.vibrate(3000);
         }
     };
 
