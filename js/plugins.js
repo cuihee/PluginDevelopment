@@ -11,10 +11,11 @@ var $plugins =
 {"name":"DTextPicture","status":true,"description":"動的文字列ピクチャ生成プラグイン","parameters":{}},
 {"name":"AdjustPictureGraphical","status":true,"description":"ピクチャのグラフィカルな位置調整プラグイン。\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"グリッドサイズ":"48","テストマップID":"7"}},
 {"name":"PictureAnimation","status":true,"description":"ピクチャのアニメーションプラグイン","parameters":{}},
-{"name":"ItemNameEscape","status":true,"description":"項目名の制御文字プラグイン","parameters":{}},
 {"name":"PictureVariableSetting","status":true,"description":"ピクチャの変数設定プラグイン","parameters":{"初期値":"ON"}},
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{"ウィンドウ表示":"OFF"}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}},
 {"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
-{"name":"TkoolMV_PluginCommandEditor","status":false,"description":"プラグインコマンドエディタ起動プラグイン","parameters":{"エディタ表示位置":"0,0,1200,800","起動キー":"F7"}}
+{"name":"TkoolMV_PluginCommandEditor","status":false,"description":"プラグインコマンドエディタ起動プラグイン","parameters":{"エディタ表示位置":"0,0,1200,800","起動キー":"F7"}},
+{"name":"DynamicDatabase","status":true,"description":"動的データベースプラグイン","parameters":{}},
+{"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}}
 ];
