@@ -15,7 +15,7 @@ var $plugins =
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{"ウィンドウ表示":"OFF"}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}},
 {"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
-{"name":"TkoolMV_PluginCommandEditor","status":false,"description":"プラグインコマンドエディタ起動プラグイン","parameters":{"エディタ表示位置":"0,0,1200,800","起動キー":"F7"}},
 {"name":"DynamicDatabase","status":true,"description":"動的データベースプラグイン","parameters":{}},
-{"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}}
+{"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}},
+{"name":"MessageWindowHidden","status":true,"description":"メッセージウィンドウ一時消去プラグイン","parameters":{"ボタン名称":"右クリック"}}
 ];
