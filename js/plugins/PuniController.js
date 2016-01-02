@@ -38,7 +38,9 @@
     'use strict';
     var pluginName = 'PuniController';
 
-
+    Bitmap.prototype.fillRect = function(x, y, width, height, color) {
+        var context = this._context;
+    };
 
     //=============================================================================
     // Game_PuniController

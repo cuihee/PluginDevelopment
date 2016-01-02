@@ -17,5 +17,6 @@ var $plugins =
 {"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
 {"name":"DynamicDatabase","status":true,"description":"動的データベースプラグイン","parameters":{}},
 {"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}},
-{"name":"MessageWindowHidden","status":true,"description":"メッセージウィンドウ一時消去プラグイン","parameters":{"ボタン名称":"右クリック"}}
+{"name":"MessageWindowHidden","status":true,"description":"メッセージウィンドウ一時消去プラグイン","parameters":{"ボタン名称":"右クリック"}},
+{"name":"SupportFaceChat","status":true,"description":"フェイスチャット機能を実装します。","parameters":{"x":"0","y":"550","width":"410","type":"1","IconNumber":"4","[C]color":"2","MsgWindowHeight":""}}
 ];
