@@ -4,10 +4,10 @@ var $plugins =
 [
 {"name":"DevToolsManage","status":true,"description":"デベロッパツール管理プラグイン","parameters":{"開始時に起動":"ON","常に前面表示":"ON","デベロッパツール表示位置":"0,0,1200,800","最小化切替キー":"F8","リロードキー":"F12","画面の左寄せキー":"F11"}},
 {"name":"CustomizeConfigDefault","status":true,"description":"Optionsデフォルト値設定プラグイン","parameters":{"alwaysDash":"ON","commandRemember":"OFF","bgmVolume":"0","bgsVolume":"0","meVolume":"0","seVolume":"0"}},
-{"name":"Chronus","status":true,"description":"ゲーム内時間の導入プラグイン","parameters":{"月ごとの日数配列":"31,28,31,30,31,30,31,31,30,31,30,31","曜日配列":"(日),(月),(火),(水),(木),(金),(土)","自然時間加算":"5","場所移動時間加算":"30","戦闘時間加算(固定)":"30","戦闘時間加算(ターン)":"5","年のゲーム変数":"8","月のゲーム変数":"9","日のゲーム変数":"10","曜日IDのゲーム変数":"13","曜日名のゲーム変数":"14","時のゲーム変数":"11","分のゲーム変数":"12","時間帯IDのゲーム変数":"16","天候IDのゲーム変数":"17","日時フォーマット1":"YYYY年 MM月 DD日 DY","日時フォーマット2":"AMHH時 MI分"}},
+{"name":"Chronus","status":true,"description":"ゲーム内時間の導入プラグイン","parameters":{"月ごとの日数配列":"31,28,31,30,31,30,31,31,30,31,30,31","曜日配列":"(日),(月),(火),(水),(木),(金),(土)","自然時間加算":"5","場所移動時間加算":"30","戦闘時間加算(固定)":"30","戦闘時間加算(ターン)":"5","年のゲーム変数":"8","月のゲーム変数":"9","日のゲーム変数":"10","曜日IDのゲーム変数":"13","曜日名のゲーム変数":"14","時のゲーム変数":"11","分のゲーム変数":"12","時間帯IDのゲーム変数":"16","天候IDのゲーム変数":"17","日時フォーマット1":"YYYY年 MM月 DD日 DY","日時フォーマット2":"AMHH時 MI分","カレンダー表示X座標":"8","カレンダー表示Y座標":"8"}},
 {"name":"ParallaxesNonBlur","status":true,"description":"視差ゼロ遠景のぼかし除去プラグイン","parameters":{}},
 {"name":"MapRapid","status":true,"description":"マップ高速化プラグイン","parameters":{"showMessageRapid":"ON","windowOpenRapid":"ON"}},
-{"name":"PictureCallCommon","status":true,"description":"ピクチャのボタン化プラグイン","parameters":{"透明色を考慮":"ON","ピクチャ番号の変数番号":"0"}},
+{"name":"PictureCallCommon","status":true,"description":"ピクチャのボタン化プラグイン","parameters":{"透明色を考慮":"ON","ピクチャ番号の変数番号":"21"}},
 {"name":"DTextPicture","status":true,"description":"動的文字列ピクチャ生成プラグイン","parameters":{}},
 {"name":"AdjustPictureGraphical","status":true,"description":"ピクチャのグラフィカルな位置調整プラグイン。\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"グリッドサイズ":"48","テストマップID":"7"}},
 {"name":"PictureAnimation","status":true,"description":"ピクチャのアニメーションプラグイン","parameters":{}},
@@ -15,8 +15,15 @@ var $plugins =
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{"ウィンドウ表示":"OFF"}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}},
 {"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
-{"name":"DynamicDatabase","status":true,"description":"動的データベースプラグイン","parameters":{}},
+{"name":"DynamicDatabase","status":true,"description":"動的データベース構築プラグイン","parameters":{}},
 {"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}},
 {"name":"MessageWindowHidden","status":true,"description":"メッセージウィンドウ一時消去プラグイン","parameters":{"ボタン名称":"右クリック"}},
-{"name":"SupportFaceChat","status":true,"description":"フェイスチャット機能を実装します。","parameters":{"x":"0","y":"550","width":"410","type":"1","IconNumber":"4","[C]color":"2","MsgWindowHeight":""}}
+{"name":"CacheManager","status":true,"description":"Selectively clear the image cache for memory usage improvements","parameters":{"Mobile only":"N","--------------------------------------------":"","Clear All":"Y","Clear Animations":"Y","Clear Battlebacks":"Y","Clear Battlers":"Y","Clear Characters":"Y","Clear Faces":"Y","Clear Parallaxes":"Y","Clear Pictures":"Y","Clear System":"N","Clear Tilesets":"Y","Clear Titles":"Y","Custom Images":""}},
+{"name":"FarewellToArms","status":true,"description":"戦闘放棄プラグイン　～武器よさらば～","parameters":{"farewellCommand":"投降","farewellYes":"諦める","farewellNo":"諦めない","farewellDescription":"抵抗を止めて投降しますか？（敗北あつかいです）","farewellMessage":"%1は戦いを止めて投降した。"}},
+{"name":"BugFixParallelEventAndCharacter","status":true,"description":"並列処理イベントのセーブ失敗バグ修正プラグイン","parameters":{}},
+{"name":"PlayerShiftTurn","status":true,"description":"プレイヤーのその場方向転換","parameters":{"ボタン名称":"tab"}},
+{"name":"FlexibleBattleBgm","status":true,"description":"敵グループごとの戦闘BGM設定プラグイン","parameters":{}},
+{"name":"TkoolMV_PluginCommandBook","status":true,"description":"プラグインコマンド集","parameters":{"制御文字の拡張":"はい"}},
+{"name":"CharacterGraphicExtend","status":true,"description":"キャラクターグラフィック表示拡張プラグイン","parameters":{"パラメータ":"デフォルト値"}},
+{"name":"TitleNewGameOnly","status":true,"description":"ニューゲームオンリープラグイン","parameters":{"PressStart":"Press Start","FontFace":""}}
 ];
