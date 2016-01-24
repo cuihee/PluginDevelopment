@@ -50,6 +50,7 @@
  *  についても制限はありません。
  *  このプラグインはもうあなたのものです。
  */
+
 (function() {
     'use strict';
     var pluginName = '${NAME}';
@@ -85,8 +86,9 @@
     };
 
     var getParamArrayString = function (paramNames) {
-        var values = getParamString(paramNames);
-        return (values || '').split(',');
+        var values = getParamString(paramNames).split(',');
+        for (var i = 0; i < values.length; i++) values[i] = values[i].trim();
+        return values;
     };
 
     var getParamArrayNumber = function (paramNames, min, max) {
@@ -101,15 +103,33 @@
         return (command || '').toUpperCase();
     };
 
-    var getArgString = function (args, upperFlg) {
-        args = convertEscapeCharacters(args);
-        return upperFlg ? args.toUpperCase() : args;
+    var getArgArrayString = function (args, upperFlg) {
+        var values = getArgString(args, upperFlg).split(',');
+        for (var i = 0; i < values.length; i++) values[i] = values[i].trim();
+        return values;
+    };
+
+    var getArgArrayNumber = function (args, min, max) {
+        var values = getArgArrayString(args, false);
+        if (arguments.length < 2) min = -Infinity;
+        if (arguments.length < 3) max = Infinity;
+        for (var i = 0; i < values.length; i++) values[i] = (parseInt(values[i], 10) || 0).clamp(min, max);
+        return values;
+    };
+
+    var getArgString = function (arg, upperFlg) {
+        arg = convertEscapeCharacters(arg);
+        return upperFlg ? arg.toUpperCase() : arg;
     };
 
     var getArgNumber = function (arg, min, max) {
         if (arguments.length <= 2) min = -Infinity;
         if (arguments.length <= 3) max = Infinity;
         return (parseInt(convertEscapeCharacters(arg), 10) || 0).clamp(min, max);
+    };
+
+    var getArgBoolean = function(arg) {
+        return (arg || '').toUpperCase() == 'ON';
     };
 
     var parseIntStrict = function(value, errorMessage) {
@@ -120,45 +140,31 @@
 
     var convertEscapeCharacters = function(text) {
         if (text == null) text = '';
-        text = text.replace(/\\/g, '\x1b');
-        text = text.replace(/\x1b\x1b/g, '\\');
-        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1], 10));
-        }.bind(window));
-        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1], 10));
-        }.bind(window));
-        text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
-            var n = parseInt(arguments[1]);
-            var actor = n >= 1 ? $gameActors.actor(n) : null;
-            return actor ? actor.name() : '';
-        }.bind(window));
-        text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
-            var n = parseInt(arguments[1]);
-            var actor = n >= 1 ? $gameParty.members()[n - 1] : null;
-            return actor ? actor.name() : '';
-        }.bind(window));
-        text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
-        return text;
+        var window = SceneManager._scene._windowLayer.children[0];
+        return window ? window.convertEscapeCharacters(text) : text;
     };
 
     //=============================================================================
     // Object
     //  プロパティの定義
     //=============================================================================
-    Object.defineProperty(Object.prototype, 'iterate', {
-        value: function(handler) {
-            Object.keys(this).forEach(function(key, index) {
-                handler.call(this, key, this[key], index);
-            }, this);
-        }
-    });
+    if (!Object.prototype.hasOwnProperty('iterate')) {
+        Object.defineProperty(Object.prototype, 'iterate', {
+            value : function (handler) {
+                Object.keys(this).forEach(function (key, index) {
+                    handler.call(this, key, this[key], index);
+                }, this);
+            }
+        });
+    }
 
-    Object.defineProperty(Object.prototype, 'isEmpty', {
-        value: function() {
-            return Object.keys(this).length <= 0;
-        }
-    });
+    if (!Object.prototype.hasOwnProperty('isEmpty')) {
+        Object.defineProperty(Object.prototype, 'isEmpty', {
+            value : function () {
+                return Object.keys(this).length <= 0;
+            }
+        });
+    }
 
     Number.prototype.times = function(handler) {
         var i = 0; while(i < this) handler.call(this, i++);
@@ -168,41 +174,40 @@
     // Game_Interpreter
     //  プラグインコマンドを追加定義します。
     //=============================================================================
+    /*
     var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.apply(this, arguments);
-        /*
         try {
             this.pluginCommand${NAME}(command, args);
         } catch (e) {
             if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
                 var window = require('nw.gui').Window.get();
-                var devTool = window.showDevTools();
-                devTool.moveTo(0, 0);
-                devTool.resizeTo(Graphics.width, Graphics.height);
-                window.focus();
+                if (!window.isDevToolsOpen()) {
+                    var devTool = window.showDevTools();
+                    devTool.moveTo(0, 0);
+                    devTool.resizeTo(Graphics.width, Graphics.height);
+                    window.focus();
+                }
             }
             console.log('プラグインコマンドの実行中にエラーが発生しました。');
             console.log('- コマンド名 　: ' + command);
             console.log('- コマンド引数 : ' + args);
             console.log('- エラー原因   : ' + e.toString());
         }
-        */
     };
-    /*
+
     Game_Interpreter.prototype.pluginCommand${NAME} = function(command, args) {
         switch (getCommandName(command)) {
             case 'XXXXX' :
                 break;
         }
     };
-    +/
 
     //=============================================================================
     // Game_${NAME}
     //  ${NAME}
     //=============================================================================
-    /*
     function Game_${NAME}() {
         this.initialize.apply(this, arguments);
     }
