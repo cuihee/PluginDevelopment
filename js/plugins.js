@@ -3,7 +3,7 @@
 var $plugins =
 [
 {"name":"DevToolsManage","status":true,"description":"デベロッパツール管理プラグイン","parameters":{"開始時に起動":"ON","常に前面表示":"ON","デベロッパツール表示位置":"0,0,1200,800","最小化切替キー":"F8","リロードキー":"F12","画面の左寄せキー":"F11","FPS表示":"ms","タイトルカット":"OFF"}},
-{"name":"CustomizeConfigDefault","status":true,"description":"Optionsデフォルト値設定プラグイン","parameters":{"alwaysDash":"ON","commandRemember":"OFF","bgmVolume":"0","bgsVolume":"0","meVolume":"0","seVolume":"0"}},
+{"name":"CustomizeConfigDefault","status":true,"description":"Optionsデフォルト値設定プラグイン","parameters":{"alwaysDash":"ON","commandRemember":"OFF","bgmVolume":"100","bgsVolume":"0","meVolume":"0","seVolume":"0"}},
 {"name":"Chronus","status":true,"description":"ゲーム内時間の導入プラグイン","parameters":{"月ごとの日数配列":"31,28,31,30,31,30,31,31,30,31,30,31","曜日配列":"(日),(月),(火),(水),(木),(金),(土)","自然時間加算":"5","場所移動時間加算":"30","戦闘時間加算(固定)":"30","戦闘時間加算(ターン)":"5","年のゲーム変数":"8","月のゲーム変数":"9","日のゲーム変数":"10","曜日IDのゲーム変数":"13","曜日名のゲーム変数":"14","時のゲーム変数":"11","分のゲーム変数":"12","時間帯IDのゲーム変数":"16","天候IDのゲーム変数":"17","日時フォーマット1":"YYYY年 MM月 DD日 DY","日時フォーマット2":"AMHH時 MI分","カレンダー表示X座標":"8","カレンダー表示Y座標":"8"}},
 {"name":"ParallaxesNonBlur","status":true,"description":"視差ゼロ遠景のぼかし除去プラグイン","parameters":{}},
 {"name":"MapRapid","status":true,"description":"マップ高速化プラグイン","parameters":{"testPlayOnly":"ON","showMessageRapid":"ON","windowOpenRapid":"ON","fadeRapid":"ON"}},
@@ -14,7 +14,7 @@ var $plugins =
 {"name":"PictureVariableSetting","status":true,"description":"ピクチャの変数設定プラグイン","parameters":{"初期値":"ON","ピクチャ表示最大数":"150"}},
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{"ウィンドウ表示":"OFF"}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"document.title = 'Ctrlでクレジット表示';","スクリプト3":"","スクリプト4":""}},
-{"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
+{"name":"ChangeWindowTouchPolicy","status":false,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
 {"name":"DynamicDatabase","status":true,"description":"動的データベース構築プラグイン","parameters":{}},
 {"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}},
 {"name":"MessageWindowHidden","status":true,"description":"メッセージウィンドウ一時消去プラグイン","parameters":{"ボタン名称":"shift"}},
@@ -36,7 +36,7 @@ var $plugins =
 {"name":"chunkof_QueryParam","status":true,"description":"","parameters":{}},
 {"name":"Common","status":true,"description":"汎用処理","parameters":{}},
 {"name":"MessageWindowPopup","status":true,"description":"フキダシウィンドウプラグイン","parameters":{"フォントサイズ":"22","余白":"10","自動設定":"ON","フェイス倍率":"75","ウィンドウ連携":"ON","行間":"0"}},
-{"name":"SceneSoundTest","status":true,"description":"サウンドテストプラグイン","parameters":{"コマンド名称":"サウンドテスト","タイトルに追加":"OFF","メニューに追加":"OFF","音量名称":"Volume","ピッチ名称":"Pitch","位相名称":"Pan","背景ピクチャ":"","読込形式":"CSV"}},
+{"name":"SceneSoundTest","status":true,"description":"サウンドテストプラグイン","parameters":{"コマンド名称":"サウンドテスト","タイトルに追加":"ON","メニューに追加":"OFF","音量名称":"Volume","ピッチ名称":"Pitch","位相名称":"Pan","背景ピクチャ":"","読込形式":"CSV"}},
 {"name":"BatchProcessManager","status":true,"description":"バッチ処理プラグイン","parameters":{}},
 {"name":"CustomizeConfigItem","status":true,"description":"オプション任意項目作成プラグイン","parameters":{"スイッチ項目1":"スイッチ項目1:OFF:0:OFF","数値項目1":"数値項目1:0:0:OFF:0:10:1","音量項目1":"音量項目1:0:0:OFF","文字項目1":"文字項目1:0:0:OFF:EASY, NORMAL, HARD, VERY HARD","スイッチ項目2":"スイッチ項目2:OFF:0:OFF","数値項目2":"数値項目2:0:0:OFF:0:10:1","音量項目2":"音量項目2:0:0:OFF","文字項目2":"文字項目2:0:0:OFF:EASY, NORMAL, HARD, VERY HARD\r"}},
 {"name":"AnotherNewGame","status":true,"description":"アナザーニューゲーム追加プラグイン","parameters":{"name":"？？？","map_id":"13","map_x":"9","map_y":"7","hidden":"OFF","disable":"OFF"}}
