@@ -11,6 +11,14 @@
     if (startMapId) {
       $dataSystem.startMapId = Number(startMapId);
     }
+    var startX = getQueryVariable('x');
+    if (startX) {
+      $dataSystem.startX = Number(startX);
+    }
+    var startY = getQueryVariable('y');
+    if (startY) {
+      $dataSystem.startY = Number(startY);
+    }
 
     _DataManager_setupNewGame.call(this);
   };
