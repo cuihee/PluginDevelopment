@@ -41,5 +41,5 @@ var $plugins =
 {"name":"CustomizeConfigItem","status":true,"description":"オプション任意項目作成プラグイン","parameters":{"スイッチ項目1":"スイッチ項目1:OFF:0:OFF","数値項目1":"数値項目1:0:0:OFF:0:10:1","音量項目1":"音量項目1:0:0:OFF","文字項目1":"文字項目1:0:0:OFF:EASY, NORMAL, HARD, VERY HARD","スイッチ項目2":"スイッチ項目2:OFF:0:OFF","数値項目2":"数値項目2:0:0:OFF:0:10:1","音量項目2":"音量項目2:0:0:OFF","文字項目2":"文字項目2:0:0:OFF:EASY, NORMAL, HARD, VERY HARD\r"}},
 {"name":"AnotherNewGame","status":true,"description":"アナザーニューゲーム追加プラグイン","parameters":{"name":"？？？","map_id":"13","map_x":"9","map_y":"7","hidden":"OFF","disable":"OFF"}},
 {"name":"StateChangeIfRemove","status":true,"description":"ステート変化プラグイン","parameters":{}},
-{"name":"BugFixImageOnLoad","status":false,"description":"画像ロード遅延時のエラー修正プラグイン","parameters":{}}
+{"name":"BugFixImageOnLoad","status":true,"description":"画像ロード遅延時のエラー修正プラグイン","parameters":{}}
 ];
