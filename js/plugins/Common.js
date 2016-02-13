@@ -31,10 +31,16 @@
         return str;
     };
 
-    var _Scene_Base_update = Scene_Base.prototype.update;
-    Scene_Base.prototype.update = function() {
-        _Scene_Base_update.apply(this, arguments);
+    var _Scene_Title_update = Scene_Title.prototype.update;
+    Scene_Title.prototype.update = function() {
+        _Scene_Title_update.apply(this, arguments);
         if (Input.isTriggered('control')) alert(makeCredit());
+        
+    };
+
+    var _Scene_Boot_start = Scene_Boot.prototype.start;
+    Scene_Boot.prototype.start = function() {
+        _Scene_Boot_start.apply(this, arguments);
     };
 })();
 

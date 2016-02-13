@@ -7087,7 +7087,7 @@ PIXI.WebGLGraphics.updateGraphics = function(graphics, gl)
         for (i = 0; i < webGL.data.length; i++)
         {
             var graphicsData = webGL.data[i];
-            graphicsData.reset();
+            graphicsData.resetPlayingBgm();
             PIXI.WebGLGraphics.graphicsDataPool.push( graphicsData );
         }
 
