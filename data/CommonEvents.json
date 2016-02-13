@@ -1,7 +1,7 @@
 [
 null,
 {"id":1,"list":[{"code":101,"indent":0,"parameters":["",0,0,2]},{"code":401,"indent":0,"parameters":["ピクチャのボタン化プラグインによりコモンイベントが"]},{"code":401,"indent":0,"parameters":["実行されました。呼び出し元ピクチャ番号「\\v[21]」"]},{"code":356,"indent":0,"parameters":["PictureOnAnimation 1 1"]},{"code":0,"indent":0,"parameters":[]}],"name":"ピクチャのボタン化","switchId":1,"trigger":0},
-{"id":2,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
+{"id":2,"list":[{"code":355,"indent":0,"parameters":["var value = BattleManager._subject instanceof Game_Actor;"]},{"code":655,"indent":0,"parameters":["$gameSwitches.setValue(45, value);"]},{"code":655,"indent":0,"parameters":["//alert($gameSwitches.value(45));"]},{"code":355,"indent":0,"parameters":["var value = BattleManager._subject.result().evaded;"]},{"code":655,"indent":0,"parameters":["$gameSwitches.setValue(45, value);"]},{"code":655,"indent":0,"parameters":["alert($gameSwitches.value(45));"]},{"code":0,"indent":0,"parameters":[]}],"name":"バトルイベント","switchId":1,"trigger":0},
 {"id":3,"list":[{"code":101,"indent":0,"parameters":["",0,0,2]},{"code":401,"indent":0,"parameters":["決定キーが押された場合のコモン"]},{"code":0,"indent":0,"parameters":[]}],"name":"決定キーを押したとき","switchId":1,"trigger":0},
 {"id":4,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0},
 {"id":5,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"ニューゲーム","switchId":1,"trigger":0},

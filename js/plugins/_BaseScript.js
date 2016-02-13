@@ -71,6 +71,10 @@
         return (parseInt(value, 10) || 0).clamp(min, max);
     };
 
+    var isParamExist = function(paramNames) {
+        return getParamOther(paramNames) != null;
+    };
+
     var getParamBoolean = function(paramNames) {
         var value = getParamOther(paramNames);
         return (value || '').toUpperCase() == 'ON';
