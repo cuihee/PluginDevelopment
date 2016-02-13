@@ -44,5 +44,5 @@ var $plugins =
 {"name":"AutomaticState","status":true,"description":"ステート自動付与プラグイン","parameters":{"パラメータ":"デフォルト値"}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"window.location.assign(window.location.href + '?canvas');","スクリプト3":"","スクリプト4":""}},
 {"name":"BugFixWebPlayTest","status":true,"description":"Web実行におけるテストオプション防止プラグイン","parameters":{}},
-{"name":"SetupOptionCustomize","status":true,"description":"起動オプション調整プラグイン","parameters":{"描画モード":"2","テストプレー":"OFF","FPS表示":"ON","オーディオ無効":"OFF","任意オプション":"map=5&x=2&y=2","ユーザオプション無効":"OFF"}}
+{"name":"SetupOptionCustomize","status":true,"description":"起動オプション調整プラグイン","parameters":{"描画モード":"2","テストプレー":"OFF","FPS表示":"ON","オーディオ無効":"OFF","任意オプション":"","ユーザオプション無効":"OFF"}}
 ];
