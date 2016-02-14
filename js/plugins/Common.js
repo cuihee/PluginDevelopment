@@ -28,6 +28,7 @@
         var str = '';
         str += 'chunkof様 chunkof_QueryParam.js(https://gist.github.com/chunkof/03806df94177b354f115)\n';
         str += 'ほらたん様 画像素材(http://illust-hp.com/img/jyank.html)\n';
+        str += 'hasegawairue様、WTR様 アナログ時計画像\n';
         return str;
     };
 
