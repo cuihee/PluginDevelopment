@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.2.0 2016/02/14 アナログ時計の表示機能を追加
+//                  現実の時間を反映させる機能の追加
 // 1.1.3 2016/01/21 競合対策（YEP_MessageCore.js）
 // 1.1.2 2016/01/10 カレンダーウィンドウの表示位置をカスタマイズできる機能を追加
 // 1.1.1 2015/12/29 日の値に「1」を設定した場合に日付の表示がおかしくなる不具合を修正
@@ -103,14 +105,49 @@
  * @desc カレンダーの表示 Y 座標です。
  * @default 0
  *
+ * @param 文字盤画像ファイル
+ * @desc アナログ時計を表示する場合の文字盤画像ファイル名（拡張子は不要）です。
+ * 画像は「img/pictures/」以下に保存してください。
+ * @default
+ *
+ * @param 長針画像ファイル
+ * @desc アナログ時計を表示する場合の長針画像ファイル名（拡張子は不要）です。
+ * 画像は「img/pictures/」以下に保存してください。
+ * @default
+ *
+ * @param 短針画像ファイル
+ * @desc アナログ時計を表示する場合の長針画像ファイル名（拡張子は不要）です。
+ * 画像は「img/pictures/」以下に保存してください。
+ * @default
+ *
+ * @param 時計X座標
+ * @desc アナログ時計の表示X座標です。画像の中心座標を指定してください。
+ * @default 84
+ *
+ * @param 時計Y座標
+ * @desc アナログ時計の表示Y座標です。画像の中心座標を指定してください。
+ * @default 156
+ *
  * @help ゲーム内で時刻と天候の概念を表現できるプラグインです。
  * 自動、マップ移動、戦闘で時間が経過し、時間と共に天候と色調が変化します。
  * これらの時間は調節可能で、またイベント中は時間の進行が停止します。
- * また日付や曜日も記録し、曜日の数や名称を自由に設定できます。
+ *
+ * さらに、現実の時間をゲーム中に反映させる機能もあります。
+ * 設定を有効にすると現実の時間がゲーム内とリンクします。
+ *
+ * 日付や曜日も記録し、曜日の数や名称を自由に設定できます。
  * 現在日付はフォーマットに従って、画面左上に表示されます。
  *
  * 日付フォーマットには以下を利用できます。
  * YYYY:年 MM:月 DD:日 HH24:時(24) HH:時(12) AM:午前 or 午後 MI:分 DY:曜日
+ *
+ * また、規格に沿った画像を用意すればアナログ時計も表示できます。
+ * 表示位置は各画像の表示可否は調整できます。
+ *
+ * 画像の規格は以下の通りです。
+ * ・文字盤 : 任意のサイズの正方形画像
+ * ・長針　 : 文字盤と同じサイズの画像で、上（0）を指している針の画像
+ * ・短針　 : 文字盤と同じサイズの画像で、上（0）を指している針の画像
  *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
@@ -132,12 +169,28 @@
  * C_SET_SNOW_LAND : 悪天候時に雪が降るようになります。
  * C_RESET_SNOW_LAND : 悪天候時に雨もしくは嵐が降るようになります。
  * C_SET_SPEED [分] : 実時間1秒あたりの時間の経過速度を設定します。
+ * C_SHOW_CLOCK : アナログ時計を表示します。
+ * C_HIDE_CLOCK : アナログ時計を非表示にします。
+ * C_SET_TIME_REAL : 時間の取得方法を実時間に変更します。
+ * C_SET_TIME_VIRTUAL : 時間の取得方法をゲーム内時間に変更します。
+ *
+ * メモ欄詳細
+ *  タイトルセットおよびマップのメモ欄に以下を入力すると、一時的に天候と色調変化を自動で無効化できます。
+ *  屋内マップやイベントシーンなどで一時的に無効化したい場合に利用できます。
+ *
+ * <C_Tint:OFF> : 色調の変更を一時的に無効化します。
+ * <C_Weather:OFF> : 天候を一時的に無効化します。
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
  *  についても制限はありません。
  *  このプラグインはもうあなたのものです。
  */
+
+function Game_Chronus() {
+    this.initialize.apply(this, arguments);
+}
+
 (function () {
     'use strict';
     var pluginName = 'Chronus';
@@ -147,6 +200,11 @@
     //  多言語とnullに対応したパラメータの取得を行います。
     //  このコードは自動生成され、全てのプラグインで同じものが使用されます。
     //=============================================================================
+    var getParamString = function(paramNames) {
+        var value = getParamOther(paramNames);
+        return value == null ? '' : value;
+    };
+
     var getParamNumber = function(paramNames, min, max) {
         var value = getParamOther(paramNames);
         if (arguments.length < 2) min = -Infinity;
@@ -161,6 +219,20 @@
             if (name) return name;
         }
         return null;
+    };
+
+    var getParamArrayString = function (paramNames) {
+        var values = getParamString(paramNames).split(',');
+        for (var i = 0; i < values.length; i++) values[i] = values[i].trim();
+        return values;
+    };
+
+    var getParamArrayNumber = function (paramNames, min, max) {
+        var values = getParamArrayString(paramNames);
+        if (arguments.length < 2) min = -Infinity;
+        if (arguments.length < 3) max = Infinity;
+        for (var i = 0; i < values.length; i++) values[i] = (parseInt(values[i], 10) || 0).clamp(min, max);
+        return values;
     };
 
     var getCommandName = function (command) {
@@ -183,6 +255,12 @@
         if (text == null) text = '';
         var window = SceneManager._scene._windowLayer.children[0];
         return window ? window.convertEscapeCharacters(text) : text;
+    };
+
+    var _DataManager_extractSaveContents = DataManager.extractSaveContents;
+    DataManager.extractSaveContents = function(contents) {
+        _DataManager_extractSaveContents.apply(this, arguments);
+        $gameSystem.chronus().onLoad();
     };
 
     //=============================================================================
@@ -210,6 +288,7 @@
     };
 
     Game_Interpreter.prototype.pluginCommandChronus = function (command, args) {
+
         switch (getCommandName(command)) {
             case 'C_ADD_TIME' :
                 $gameSystem.chronus().addTime(getArgNumber(args[0], 0, 99999));
@@ -259,7 +338,19 @@
                 $gameSystem.chronus().resetSnowLand();
                 break;
             case 'C_SET_SPEED':
-                $gameSystem.chronus()._timeAutoAdd = getArgNumber(args[0], 0, 99);
+                $gameSystem.chronus().setTimeAutoAdd(getArgNumber(args[0], 0, 99));
+                break;
+            case 'C_SHOW_CLOCK':
+                $gameSystem.chronus().showClock();
+                break;
+            case 'C_HIDE_CLOCK':
+                $gameSystem.chronus().hideClock();
+                break;
+            case 'C_SET_TIME_REAL':
+                $gameSystem.chronus().setTimeReal();
+                break;
+            case 'C_SET_TIME_VIRTUAL':
+                $gameSystem.chronus().setTimeVirtual();
                 break;
         }
     };
@@ -268,8 +359,8 @@
     Game_Interpreter.prototype.command236 = function() {
         var result = _Game_Interpreter_command236.call(this);
         if (!$gameParty.inBattle()) {
-            $gameSystem.chronus()._weatherType = Game_Chronus._weatherTypes.indexOf(this._params[0]);
-            $gameSystem.chronus()._weatherPower = this._params[1];
+            $gameSystem.chronus().setWeatherType(Game_Chronus.weatherTypes.indexOf(this._params[0]));
+            $gameSystem.chronus().setWeatherPower(this._params[1]);
             $gameSystem.chronus().refreshTint(true);
         }
         return result;
@@ -293,27 +384,34 @@
         this.chronus().onBattleEnd();
     };
 
+    var _Game_System_onLoad = Game_System.prototype.onLoad;
+    Game_System.prototype.onLoad = function() {
+        if (_Game_System_onLoad) _Game_System_onLoad.apply(this, arguments);
+        if (!this.chronus()) this._chronus = new Game_Chronus();
+        this._chronus.onLoad();
+    };
+
     //=============================================================================
     // Game_Map
     //  マップ及びタイルセットから、色調変化無効フラグを取得します。
     //=============================================================================
     Game_Map.prototype.isDisableTint = function() {
-        var chronusTnit = false;
-        if ($dataMap.data.length === 0) return false;
-        chronusTnit = $dataMap.meta.chronusTnit;
-        if (chronusTnit != null) return chronusTnit === 'OFF';
-        chronusTnit = $dataTilesets[$dataMap.tilesetId].meta.chronusTnit;
-        if (chronusTnit != null) return chronusTnit === 'OFF';
-        return false;
+        return this.isChronicleMetaInfo('Tint');
     };
 
     Game_Map.prototype.isDisableWeather = function() {
-        var chronusWeather = false;
-        if ($dataMap.data.length === 0) return false;
-        chronusWeather = $dataMap.meta.chronusWeather;
-        if (chronusWeather != null) return chronusWeather === 'OFF';
-        chronusWeather = $dataTilesets[$dataMap.tilesetId].meta.chronusWeather;
-        if (chronusWeather != null) return chronusWeather === 'OFF';
+        return this.isChronicleMetaInfo('Weather');
+    };
+
+    Game_Map.prototype.isChronicleMetaInfo = function(tagName) {
+        var value = $dataMap.meta['chronus' + tagName];
+        if (value != null) return value === 'OFF';
+        value = $dataMap.meta['C_' + tagName];
+        if (value != null) return value === 'OFF';
+        value = $dataTilesets[$dataMap.tilesetId].meta['chronus' + tagName];
+        if (value != null) return value === 'OFF';
+        value = $dataTilesets[$dataMap.tilesetId].meta['C_' + tagName];
+        if (value != null) return value === 'OFF';
         return false;
     };
 
@@ -335,19 +433,19 @@
     Scene_Map.prototype.onMapLoaded = function() {
         $gameSystem.chronus().refreshTint(true);
         $gameSystem.chronus().refreshWeather(true);
-        _Scene_Map_onMapLoaded.call(this);
+        _Scene_Map_onMapLoaded.apply(this, arguments);
     };
 
     var _Scene_Map_updateMain = Scene_Map.prototype.updateMain;
     Scene_Map.prototype.updateMain = function() {
-        _Scene_Map_updateMain.call(this);
+        _Scene_Map_updateMain.apply(this, arguments);
         $gameSystem.chronus().update();
     };
 
     var _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {
-        _Scene_Map_createAllWindows.call(this);
         this.createChronusWindow();
+        _Scene_Map_createAllWindows.apply(this, arguments);
     };
 
     Scene_Map.prototype.createChronusWindow = function() {
@@ -376,12 +474,13 @@
     Window_Chronus.prototype = Object.create(Window_Base.prototype);
     Window_Chronus.prototype.constructor = Window_Chronus;
 
+    var _Window_Chronus_initialize = Window_Chronus.prototype.initialize;
     Window_Chronus.prototype.initialize = function() {
         var bitmap = new Bitmap();
         var pad = 8;
         var width = Math.max(bitmap.measureTextWidth(this.chronus().getDateFormat(1)),
             bitmap.measureTextWidth(this.chronus().getDateFormat(2)));
-        Window_Base.prototype.initialize.call(this, 0, 0, width + pad * 2, 28 * 2 + pad * 2);
+        _Window_Chronus_initialize.call(this, 0, 0, width + pad * 2, 28 * 2 + pad * 2);
         this.padding = pad;
         this.contents = new Bitmap(this.width - this.padding * 2, this.height - this.padding * 2);
         this.x = getParamNumber('カレンダー表示X座標');
@@ -395,13 +494,12 @@
             0, 0, this.contents.width, this.contents.fontSize, 'left');
         this.contents.drawText(this.chronus().getDateFormat(2),
             0, this.contents.fontSize, this.contents.width, this.contents.fontSize, 'left');
-        this.chronus()._demandRefresh = false;
     };
 
     Window_Chronus.prototype.update = function() {
         if (this.chronus().isShowingCalendar()) {
             this.show();
-            if (this.chronus()._demandRefresh) this.refresh();
+            if (this.chronus().isNeedRefresh()) this.refresh();
         } else {
             this.hide();
         }
@@ -410,427 +508,554 @@
     Window_Chronus.prototype.chronus = function() {
         return $gameSystem.chronus();
     };
-})();
 
-//=============================================================================
-// Game_Chronus
-//  時の流れを扱うクラスです。このクラスはGame_Systemクラスで生成されます。
-//  セーブデータの保存対象のためグローバル領域に定義します。
-//=============================================================================
-function Game_Chronus() {
-    this.initialize.apply(this, arguments);
-}
-
-Game_Chronus.prototype             = Object.create(Game_Chronus.prototype);
-Game_Chronus.prototype.constructor = Game_Chronus;
-Game_Chronus._pluginName           = 'Chronus';
-Game_Chronus._weatherTypes         = ['none', 'rain', 'storm', 'snow'];
-
-Game_Chronus.prototype.initialize = function () {
-    this._timeMeter       = 0;            // 一日の中での時間経過（分単位）60 * 24
-    this._dayMeter        = 0;            // ゲーム開始からの累計日数
-    this._timeAutoAdd     = this.getParamNumber('自然時間加算', 0, 99);
-    this._timeTransferAdd = this.getParamNumber('場所移動時間加算', 0);
-    this._timeBattleAdd   = this.getParamNumber('戦闘時間加算(固定)', 0);
-    this._timeTurnAdd     = this.getParamNumber('戦闘時間加算(ターン)', 0);
-    this._weekNames       = this.getParamArrayString('曜日配列');
-    this._daysOfMonth     = this.getParamArrayNumber('月ごとの日数配列');
-    this._stop            = true;         // 停止フラグ（全ての加算に対して有効。ただし手動による加算は例外）
-    this._disableTint     = false;        // 色調変更禁止フラグ
-    this._calendarVisible = false;        // カレンダー表示フラグ
-    this._disableWeather  = false;        // 天候制御禁止フラグ
-    this._weatherType     = 0;            // 天候タイプ(0:なし 1:雨 2:嵐 :3雪)
-    this._weatherPower    = 0;            // 天候の強さ
-    this._weatherCounter  = 0;            // 同一天候の維持時間
-    this._weatherSnowLand = false;        // 降雪地帯フラグ
-    this._datetime        = null;
-    this._demandRefresh   = false;
-    this._prevHour        = -1;
-};
-
-Game_Chronus.prototype.getParamString = function(paramNames) {
-    var value = this.getParamOther(paramNames);
-    return value == null ? '' : value;
-};
-
-Game_Chronus.prototype.getParamNumber = function(paramNames, min, max) {
-    var value = this.getParamOther(paramNames);
-    if (arguments.length < 2) min = -Infinity;
-    if (arguments.length < 3) max = Infinity;
-    return (parseInt(value, 10) || 0).clamp(min, max);
-};
-
-Game_Chronus.prototype.getParamBoolean = function(paramNames) {
-    var value = this.getParamOther(paramNames);
-    return (value || '').toUpperCase() == 'ON';
-};
-
-Game_Chronus.prototype.getParamOther = function(paramNames) {
-    if (!Array.isArray(paramNames)) paramNames = [paramNames];
-    for (var i = 0; i < paramNames.length; i++) {
-        var name = PluginManager.parameters(Game_Chronus._pluginName)[paramNames[i]];
-        if (name) return name;
+    //=============================================================================
+    // Sprite_Abstract
+    //  時計スプライトを使用しない場合に使用される抽象スプライトクラスです。
+    //=============================================================================
+    function Sprite_Abstract() {
+        this.initialize.apply(this, arguments);
     }
-    return null;
-};
 
-Game_Chronus.prototype.getParamArrayString = function (paramNames) {
-    var values = this.getParamString(paramNames).split(',');
-    for (var i = 0; i < values.length; i++) values[i] = values[i].trim();
-    return values;
-};
+    Sprite_Abstract.prototype.initialize = function() {
+        this.x = 0;
+        this.y = 0;
+        this.width = 0;
+        this.height = 0;
+    };
 
-Game_Chronus.prototype.getParamArrayNumber = function (paramNames, min, max) {
-    var values = this.getParamArrayString(paramNames);
-    if (arguments.length < 2) min = -Infinity;
-    if (arguments.length < 3) max = Infinity;
-    for (var i = 0; i < values.length; i++) values[i] = (parseInt(values[i], 10) || 0).clamp(min, max);
-    return values;
-};
+    Sprite_Abstract.prototype.update = function() {
+    };
 
-Game_Chronus.prototype.parseIntStrict = function(value, errorMessage) {
-    var result = parseInt(value, 10);
-    if (isNaN(result)) throw Error('指定した値[' + value + ']が数値ではありません。' + errorMessage);
-    return result;
-};
-
-Game_Chronus.prototype.update = function () {
-    this.updateEffect();
-    if (this.isStop() || $gameMap.isEventRunning()) {
-        this._datetime = null;
-        return;
+    //=============================================================================
+    // Sprite_Chronicle_Clock
+    //  ゲーム内時間情報を描画するウィンドウです。
+    //=============================================================================
+    function Sprite_Chronicle_Clock() {
+        this.initialize.apply(this, arguments);
     }
-    if (this._datetime == null) this._datetime = Date.now();
-    if (this._datetime + 1000 <= Date.now()) {
-        this._datetime = Date.now();
-        this.addTime();
-    }
-};
 
-Game_Chronus.prototype.updateEffect = function () {
-    var hour = this.getHour();
-    if (this._prevHour !== hour) {
-        this.controlWeather(false);
-        this.refreshTint(false);
-        this._prevHour = this.getHour();
-    }
-};
+    Sprite_Chronicle_Clock.prototype = Object.create(Sprite.prototype);
+    Sprite_Chronicle_Clock.prototype.constructor = Sprite_Chronicle_Clock;
 
-Game_Chronus.prototype.refreshTint = function (swift) {
-    this.isEnableTint() ? this.setTint(this.getTimeZone(), swift) : $gameScreen.clearTone();
-};
+    var _Sprite_Chronicle_Clock_initialize = Sprite_Chronicle_Clock.prototype.initialize;
+    Sprite_Chronicle_Clock.prototype.initialize = function() {
+        _Sprite_Chronicle_Clock_initialize.apply(this, arguments);
+        this.x = getParamNumber('時計X座標');
+        this.y = getParamNumber('時計Y座標');
+        this.anchor.x = 0.5;
+        this.anchor.y = 0.5;
+        this.bitmap = ImageManager.loadPicture(getParamString('文字盤画像ファイル'));
+        this.createHourHandSprite();
+        this.createMinuteHandSprite();
+    };
 
-Game_Chronus.prototype.setTint = function (timezone, swift) {
-    var tone = null;
-    switch (timezone) {
-        case 0:
-            tone = [-102, -102, -68, 102];
-            break;
-        case 1:
-            tone = [-68, -68, 0, 0];
-            break;
-        case 2:
-            tone = [0, 0, 0, 0];
-            break;
-        case 3:
-            tone = [34, 34, 34, 0];
-            break;
-        case 4:
-            tone = [68, -34, -34, 0];
-            break;
-        case 5:
-            tone = [-68, -68, 0, 68];
-            break;
-    }
-    if (this.getWeatherTypeId() !== 0) {
-        tone[0] > 0 ? tone[0] /= 7 : tone[0] -= 14;
-        tone[1] > 0 ? tone[1] /= 7 : tone[1] -= 14;
-        tone[2] > 0 ? tone[2] /= 7 : tone[1] -= 14;
-        tone[3] === 0 ? tone[3] = 68 : tone[3] += 14;
-    }
-    $gameScreen.startTint(tone, swift ? 0 : Math.floor(60 * 5 / (this._timeAutoAdd / 10)));
-};
+    Sprite_Chronicle_Clock.prototype.createHourHandSprite = function() {
+        var handName = getParamString('短針画像ファイル'), handSprite = new Sprite();
+        handSprite.anchor.x = 0.5;
+        handSprite.anchor.y = 0.5;
+        handSprite.bitmap = handName ? ImageManager.loadPicture(handName) : ImageManager.loadEmptyBitmap();
+        handSprite.visible = !!handName;
+        this.hourHandSprite = handSprite;
+        this.addChild(this.hourHandSprite);
+    };
 
-Game_Chronus.prototype.controlWeather = function (force) {
-    if (!force && Math.random() * 10 > this._weatherCounter - 7) {
-        this._weatherCounter++;
-    } else {
-        this._weatherCounter = 0;
-        if (Math.random() * 10 > 7) {
-            this._weatherType  = this.isSnowLand() ? 3 : Math.random() * 10 > 6 ? 2 : 1;
-            this._weatherPower = Math.floor(Math.random() * 10);
-        } else {
-            this._weatherType  = 0;
-            this._weatherPower = 0;
+    Sprite_Chronicle_Clock.prototype.createMinuteHandSprite = function() {
+        var handName = getParamString('長針画像ファイル'), handSprite = new Sprite();
+        handSprite.anchor.x = 0.5;
+        handSprite.anchor.y = 0.5;
+        handSprite.bitmap = handName ? ImageManager.loadPicture(handName) : ImageManager.loadEmptyBitmap();
+        handSprite.visible = !!handName;
+        this.minuteHandSprite = handSprite;
+        this.addChild(this.minuteHandSprite);
+    };
+
+    Sprite_Chronicle_Clock.prototype.update = function() {
+        this.visible = this.chronus().isShowingClock();
+        if (this.visible && !this.chronus().isTimeStop()) {
+            this.updateHourHand();
+            this.updateMinuteHand();
         }
-    }
-    this.refreshWeather(false);
-};
+    };
 
-Game_Chronus.prototype.refreshWeather = function (swift) {
-    this.isEnableWeather() ? this.setWeather(swift) : $gameScreen.changeWeather(0, 0, 0);
-};
+    Sprite_Chronicle_Clock.prototype.updateHourHand = function() {
+        if (!this.hourHandSprite.visible) return;
+        this.hourHandSprite.rotation = this.chronus().getRotationHourHand();
+    };
 
-Game_Chronus.prototype.setWeather = function (swift) {
-    $gameScreen.changeWeather(this.getWeatherType(), this._weatherPower,
-        swift ? 0 : Math.floor(60 * 5 / (this._timeAutoAdd / 10)));
-};
+    Sprite_Chronicle_Clock.prototype.updateMinuteHand = function() {
+        if (!this.minuteHandSprite.visible) return;
+        this.minuteHandSprite.rotation = this.chronus().getRotationMinuteHand();
+    };
 
-Game_Chronus.prototype.disableTint = function () {
-    this._disableTint = true;
-    this.refreshTint(true);
-};
+    Sprite_Chronicle_Clock.prototype.chronus = function() {
+        return $gameSystem.chronus();
+    };
 
-Game_Chronus.prototype.enableTint = function () {
-    this._disableTint = false;
-    this.refreshTint(true);
-};
+    //=============================================================================
+    // Spriteset_Map
+    //  アナログ時計の画像を追加定義します。
+    //=============================================================================
+    var _Spriteset_Map_createUpperLayer = Spriteset_Map.prototype.createUpperLayer;
+    Spriteset_Map.prototype.createUpperLayer = function() {
+        _Spriteset_Map_createUpperLayer.apply(this, arguments);
+        this.createClockSprite();
+    };
 
-Game_Chronus.prototype.isEnableTint = function () {
-    return !this._disableTint && !$gameMap.isDisableTint();
-};
+    Spriteset_Map.prototype.createClockSprite = function() {
+        var fileName = ImageManager.loadPicture(getParamString('文字盤画像ファイル'));
+        this._clockSprite = fileName ? new Sprite_Chronicle_Clock() : new Sprite_Abstract();
+        this.addChild(this._clockSprite);
+    };
 
-Game_Chronus.prototype.disableWeather = function () {
-    this._disableWeather = true;
-    this.refreshWeather(true);
-};
+    //=============================================================================
+    // Game_Chronus
+    //  時の流れを扱うクラスです。このクラスはGame_Systemクラスで生成されます。
+    //  セーブデータの保存対象のためグローバル領域に定義します。
+    //=============================================================================
+    Game_Chronus.prototype             = Object.create(Game_Chronus.prototype);
+    Game_Chronus.prototype.constructor = Game_Chronus;
+    Game_Chronus.weatherTypes          = ['none', 'rain', 'storm', 'snow'];
 
-Game_Chronus.prototype.enableWeather = function () {
-    this._disableWeather = false;
-    this.refreshWeather(true);
-};
+    Game_Chronus.prototype.initialize = function () {
+        this._timeMeter       = 0;            // 一日の中での時間経過（分単位）60 * 24
+        this._dayMeter        = 0;            // ゲーム開始からの累計日数
+        this._stop            = true;         // 停止フラグ（全ての加算に対して有効。ただし手動による加算は例外）
+        this._disableTint     = false;        // 色調変更禁止フラグ
+        this._calendarVisible = false;        // カレンダー表示フラグ
+        this._disableWeather  = false;        // 天候制御禁止フラグ
+        this._weatherType     = 0;            // 天候タイプ(0:なし 1:雨 2:嵐 :3雪)
+        this._weatherPower    = 0;            // 天候の強さ
+        this._weatherCounter  = 0;            // 同一天候の維持時間
+        this._weatherSnowLand = false;        // 降雪地帯フラグ
+        this._clockVisible    = false;        // アナログ時計表示フラグ
+        this._realTime        = false;        // 実時間フラグ
+        this._frameCount      = 0;
+        this._demandRefresh   = false;
+        this._prevHour        = -1;
+        this._nowDate         = null;
+        this._timeAutoAdd     = 0;
+        this._timeTransferAdd = 0;
+        this._timeBattleAdd   = 0;
+        this._timeTurnAdd     = 0;
+        this._weekNames       = null;
+        this._daysOfMonth     = null;
+        this.onLoad();
+    };
 
-Game_Chronus.prototype.isEnableWeather = function () {
-    return !this._disableWeather && !$gameMap.isDisableWeather();
-};
+    Game_Chronus.prototype.onLoad = function () {
+        if (!this._nowDate) this._nowDate = new Date();
+        if (!this._frameCount) this._frameCount = 0;
+        this._timeAutoAdd     = getParamNumber('自然時間加算', 0, 99);
+        this._timeTransferAdd = getParamNumber('場所移動時間加算', 0);
+        this._timeBattleAdd   = getParamNumber('戦闘時間加算(固定)', 0);
+        this._timeTurnAdd     = getParamNumber('戦闘時間加算(ターン)', 0);
+        this._weekNames       = getParamArrayString('曜日配列');
+        this._daysOfMonth     = getParamArrayNumber('月ごとの日数配列');
+    };
 
-Game_Chronus.prototype.setSnowLand = function () {
-    this._weatherSnowLand = true;
-    this.refreshWeather(true);
-};
+    Game_Chronus.prototype.update = function () {
+        this.updateEffect();
+        if (this.isTimeStop()) return;
+        this._frameCount++;
+        if (this._frameCount >= 60) {
+            if (this.isRealTime()) this._nowDate.setTime(Date.now());
+            this.addTime();
+        }
+    };
 
-Game_Chronus.prototype.resetSnowLand = function () {
-    this._weatherSnowLand = false;
-    this.refreshWeather(true);
-};
+    Game_Chronus.prototype.isRealTime = function () {
+        return !!this._realTime;
+    };
 
-Game_Chronus.prototype.isSnowLand = function () {
-    return this._weatherSnowLand;
-};
+    Game_Chronus.prototype.isTimeStop = function() {
+        return this.isStop() || $gameMap.isEventRunning();
+    };
 
-Game_Chronus.prototype.onBattleEnd = function () {
-    if (this.isStop()) return;
-    this.addTime(this._timeBattleAdd + this._timeTurnAdd * $gameTroop.turnCount());
-};
+    Game_Chronus.prototype.updateEffect = function () {
+        var hour = this.getHour();
+        if (this._prevHour !== hour) {
+            this.controlWeather(false);
+            this.refreshTint(false);
+            this._prevHour = this.getHour();
+        }
+    };
 
-Game_Chronus.prototype.transfer = function () {
-    if (this.isStop()) return;
-    this.addTime(this._timeTransferAdd);
-};
+    Game_Chronus.prototype.refreshTint = function (swift) {
+        this.isEnableTint() ? this.setTint(this.getTimeZone(), swift) : $gameScreen.clearTone();
+    };
 
-Game_Chronus.prototype.stop = function () {
-    this._stop = true;
-};
+    Game_Chronus.prototype.setTint = function (timezone, swift) {
+        var tone = null;
+        switch (timezone) {
+            case 0:
+                tone = [-102, -102, -68, 102];
+                break;
+            case 1:
+                tone = [-68, -68, 0, 0];
+                break;
+            case 2:
+                tone = [0, 0, 0, 0];
+                break;
+            case 3:
+                tone = [34, 34, 34, 0];
+                break;
+            case 4:
+                tone = [68, -34, -34, 0];
+                break;
+            case 5:
+                tone = [-68, -68, 0, 68];
+                break;
+        }
+        if (this.getWeatherTypeId() !== 0) {
+            tone[0] > 0 ? tone[0] /= 7 : tone[0] -= 14;
+            tone[1] > 0 ? tone[1] /= 7 : tone[1] -= 14;
+            tone[2] > 0 ? tone[2] /= 7 : tone[1] -= 14;
+            tone[3] === 0 ? tone[3] = 68 : tone[3] += 14;
+        }
+        $gameScreen.startTint(tone, swift ? 0 : this.getEffectDuration());
+    };
 
-Game_Chronus.prototype.start = function () {
-    this._stop = false;
-};
+    Game_Chronus.prototype.setWeatherType = function(value) {
+        this._weatherType = value.clamp(0, Game_Chronus.weatherTypes.length - 1);
+    };
 
-Game_Chronus.prototype.isStop = function () {
-    return this._stop;
-};
+    Game_Chronus.prototype.setWeatherPower = function(value) {
+        this._weatherPower = value.clamp(0, 10);
+    };
 
-Game_Chronus.prototype.showCalendar = function () {
-    this._calendarVisible = true;
-};
+    Game_Chronus.prototype.setTimeAutoAdd = function(value) {
+        this._timeAutoAdd = value.clamp(0, 99);
+    };
 
-Game_Chronus.prototype.hideCalendar = function () {
-    this._calendarVisible = false;
-};
+    Game_Chronus.prototype.controlWeather = function (force) {
+        if (!force && Math.random() * 10 > this._weatherCounter - 7) {
+            this._weatherCounter++;
+        } else {
+            this._weatherCounter = 0;
+            if (Math.random() * 10 > 7) {
+                this.setWeatherType(this.isSnowLand() ? 3 : Math.random() * 10 > 6 ? 2 : 1);
+                this.setWeatherPower(Math.floor(Math.random() * 10));
+            } else {
+                this.setWeatherType(0);
+                this.setWeatherPower(0);
+            }
+        }
+        this.refreshWeather(false);
+    };
 
-Game_Chronus.prototype.isShowingCalendar = function () {
-    return this._calendarVisible;
-};
+    Game_Chronus.prototype.refreshWeather = function (swift) {
+        this.isEnableWeather() ? this.setScreenWeather(swift) : $gameScreen.changeWeather(0, 0, 0);
+    };
 
-Game_Chronus.prototype.isSnowLand = function () {
-    return this._weatherSnowLand;
-};
+    Game_Chronus.prototype.setScreenWeather = function (swift) {
+        $gameScreen.changeWeather(this.getWeatherType(), this._weatherPower, swift ? 0 : this.getEffectDuration());
+    };
 
-Game_Chronus.prototype.addTime = function (value) {
-    if (arguments.length === 0) value = this._timeAutoAdd;
-    this._timeMeter += value;
-    while (this._timeMeter >= 60 * 24) {
-        this.addDay();
-        this._timeMeter -= 60 * 24;
-    }
-    this.demandRefresh(false);
-};
+    Game_Chronus.prototype.getEffectDuration = function () {
+        return this.isRealTime() ? 600 : Math.floor(60 * 5 / (this._timeAutoAdd / 10));
+    };
 
-Game_Chronus.prototype.setTime = function (hour, minute) {
-    var time = hour * 60 + minute;
-    if (this._timeMeter > time) this.addDay();
-    this._timeMeter = time;
-    this.demandRefresh(true);
-
-};
-
-Game_Chronus.prototype.addDay = function (value) {
-    if (arguments.length === 0) value = 1;
-    this._dayMeter += value;
-    this.demandRefresh(false);
-};
-
-Game_Chronus.prototype.setDay = function (year, month, day) {
-    var newDay = (year - 1) * this.getDaysOfYear();
-    for (var i = 0; i < month - 1; i++) {
-        newDay += this._daysOfMonth[i];
-    }
-    newDay += day - 1;
-    this._dayMeter = newDay;
-    this.demandRefresh(true);
-};
-
-Game_Chronus.prototype.demandRefresh = function (effectRefreshFlg) {
-    this._demandRefresh = true;
-    this.setGameVariable();
-    if (effectRefreshFlg) {
+    Game_Chronus.prototype.disableTint = function () {
+        this._disableTint = true;
         this.refreshTint(true);
-        this.controlWeather(true);
-    }
-};
+    };
 
-Game_Chronus.prototype.getDaysOfWeek = function () {
-    return this._weekNames.length;
-};
+    Game_Chronus.prototype.enableTint = function () {
+        this._disableTint = false;
+        this.refreshTint(true);
+    };
 
-Game_Chronus.prototype.getDaysOfMonth = function (month) {
-    return this._daysOfMonth[month - 1];
-};
+    Game_Chronus.prototype.isEnableTint = function () {
+        return !this._disableTint && !$gameMap.isDisableTint();
+    };
 
-Game_Chronus.prototype.getDaysOfYear = function () {
-    var result = 0;
-    this._daysOfMonth.forEach(function(days) {result += days});
-    return result;
-};
+    Game_Chronus.prototype.disableWeather = function () {
+        this._disableWeather = true;
+        this.refreshWeather(true);
+    };
 
-Game_Chronus.prototype.setGameVariable = function () {
-    this.setGameVariableSub('年のゲーム変数', this.getYear());
-    this.setGameVariableSub('月のゲーム変数', this.getMonth());
-    this.setGameVariableSub('日のゲーム変数', this.getDay());
-    this.setGameVariableSub('曜日IDのゲーム変数', this.getWeekIndex());
-    this.setGameVariableSub('曜日名のゲーム変数', this.getWeekName());
-    this.setGameVariableSub('時のゲーム変数', this.getHour());
-    this.setGameVariableSub('分のゲーム変数', this.getMinute());
-    this.setGameVariableSub('時間帯IDのゲーム変数', this.getTimeZone());
-    this.setGameVariableSub('天候IDのゲーム変数', this.getWeatherTypeId());
-};
+    Game_Chronus.prototype.enableWeather = function () {
+        this._disableWeather = false;
+        this.refreshWeather(true);
+    };
 
-Game_Chronus.prototype.setGameVariableSub = function (paramName, value) {
-    var index = this.getParamNumber(paramName, 0, 5000);
-    if (index !== 0) $gameVariables.setValue(index, value);
-};
+    Game_Chronus.prototype.isEnableWeather = function () {
+        return !this._disableWeather && !$gameMap.isDisableWeather();
+    };
 
-Game_Chronus.prototype.getMonthOfYear = function () {
-    return this._daysOfMonth.length;
-};
+    Game_Chronus.prototype.setSnowLand = function () {
+        this._weatherSnowLand = true;
+        this.refreshWeather(true);
+    };
 
-Game_Chronus.prototype.getWeekName = function () {
-    return this._weekNames[this.getWeekIndex()];
-};
+    Game_Chronus.prototype.resetSnowLand = function () {
+        this._weatherSnowLand = false;
+        this.refreshWeather(true);
+    };
 
-Game_Chronus.prototype.getWeekIndex = function () {
-    return this._dayMeter % this.getDaysOfWeek();
-};
+    Game_Chronus.prototype.isSnowLand = function () {
+        return this._weatherSnowLand;
+    };
 
-Game_Chronus.prototype.getYear = function () {
-    return Math.floor(this._dayMeter / this.getDaysOfYear()) + 1;
-};
+    Game_Chronus.prototype.setTimeReal = function () {
+        this._realTime = true;
+    };
 
-Game_Chronus.prototype.getMonth = function () {
-    var days = this._dayMeter % this.getDaysOfYear();
-    for (var i = 0; i < this._daysOfMonth.length; i++) {
-        days -= this._daysOfMonth[i];
-        if (days < 0) return i + 1;
-    }
-    return null;
-};
+    Game_Chronus.prototype.setTimeVirtual = function () {
+        this._realTime = false;
+    };
 
-Game_Chronus.prototype.getDay = function () {
-    var days = this._dayMeter % this.getDaysOfYear();
-    for (var i = 0; i < this._daysOfMonth.length; i++) {
-        if (days < this._daysOfMonth[i]) return days + 1;
-        days -= this._daysOfMonth[i];
-    }
-    return null;
-};
+    Game_Chronus.prototype.onBattleEnd = function () {
+        if (this.isStop()) return;
+        this.addTime(this._timeBattleAdd + this._timeTurnAdd * $gameTroop.turnCount());
+    };
 
-Game_Chronus.prototype.getHour = function () {
-    return Math.floor(this._timeMeter / 60);
-};
+    Game_Chronus.prototype.transfer = function () {
+        if (this.isStop()) return;
+        this.addTime(this._timeTransferAdd);
+    };
 
-Game_Chronus.prototype.getMinute = function () {
-    return this._timeMeter % 60;
-};
+    Game_Chronus.prototype.stop = function () {
+        this._stop = true;
+    };
 
-Game_Chronus.prototype.getDateFormat = function(index) {
-    var format = this.getParamString('日時フォーマット' + String(index));
-    format = format.replace(/DY/gi, function() {
-        return this.getWeekName();
-    }.bind(this));
-    format = format.replace(/(Y+)/gi, function() {
-        return this.getValuePadding(this.getYear(), arguments[1].length);
-    }.bind(this));
-    format = format.replace(/MM/gi, function() {
-        return this.getValuePadding(this.getMonth(), String(this.getMonthOfYear()).length);
-    }.bind(this));
-    format = format.replace(/DD/gi, function() {
-        return this.getValuePadding(this.getDay(),
-            String(this.getDaysOfMonth(this.getMonth())).length);
-    }.bind(this));
-    format = format.replace(/HH24/gi, function() {
-        return this.getValuePadding(this.getHour(), 2);
-    }.bind(this));
-    format = format.replace(/HH/gi, function() {
-        return this.getValuePadding(this.getHour() % 12, 2);
-    }.bind(this));
-    format = format.replace(/AM/gi, function() {
-        return Math.floor(this.getHour() / 12) === 0 ?
-            $gameSystem.isJapanese() ? '午前' : 'Morning  ' :
-            $gameSystem.isJapanese() ? '午後' : 'Afternoon';
-    }.bind(this));
-    format = format.replace(/MI/gi, function() {
-        return this.getValuePadding(this.getMinute(), 2);
-    }.bind(this));
-    return format;
-};
+    Game_Chronus.prototype.start = function () {
+        this._stop = false;
+    };
 
-Game_Chronus.prototype.getTimeZone = function () {
-    return this.isHourInRange(0, 4)   ? 0 :
-           this.isHourInRange(5, 6)   ? 1 :
-           this.isHourInRange(7, 11)  ? 2 :
-           this.isHourInRange(12, 16) ? 3 :
-           this.isHourInRange(17, 18) ? 4 :
-           this.isHourInRange(19, 21) ? 5 :
-           this.isHourInRange(22, 24) ? 0 : null;
-};
+    Game_Chronus.prototype.isStop = function () {
+        return this._stop;
+    };
 
-Game_Chronus.prototype.getWeatherTypeId = function () {
-    return this._weatherType;
-};
+    Game_Chronus.prototype.showCalendar = function () {
+        this._calendarVisible = true;
+    };
 
-Game_Chronus.prototype.getWeatherType = function () {
-    return Game_Chronus._weatherTypes[this.getWeatherTypeId()];
-};
+    Game_Chronus.prototype.hideCalendar = function () {
+        this._calendarVisible = false;
+    };
 
-Game_Chronus.prototype.getValuePadding = function(value, digit, padChar) {
-    if (arguments.length === 2) padChar = '0';
-    var result = "";
-    for (var i = 0; i < digit; i++) result += padChar;
-    result += value;
-    return result.substr(-digit);
-};
+    Game_Chronus.prototype.isShowingCalendar = function () {
+        return this._calendarVisible;
+    };
 
-Game_Chronus.prototype.isHourInRange = function(min, max) {
-    var hour = this.getHour();
-    return hour >= min && hour <= max;
-};
+    Game_Chronus.prototype.isSnowLand = function () {
+        return this._weatherSnowLand;
+    };
+
+    Game_Chronus.prototype.showClock = function () {
+        this._clockVisible = true;
+    };
+
+    Game_Chronus.prototype.hideClock = function () {
+        this._clockVisible = false;
+    };
+
+    Game_Chronus.prototype.isShowingClock = function () {
+        return this._clockVisible;
+    };
+
+    Game_Chronus.prototype.addTime = function (value) {
+        if (arguments.length === 0) value = this._timeAutoAdd;
+        this._timeMeter += value;
+        while (this._timeMeter >= 60 * 24) {
+            this.addDay();
+            this._timeMeter -= 60 * 24;
+        }
+        this.demandRefresh(false);
+    };
+
+    Game_Chronus.prototype.setTime = function (hour, minute) {
+        var time = hour * 60 + minute;
+        if (this._timeMeter > time) this.addDay();
+        this._timeMeter = time;
+        this.demandRefresh(true);
+    };
+
+    Game_Chronus.prototype.addDay = function (value) {
+        if (arguments.length === 0) value = 1;
+        this._dayMeter += value;
+        this.demandRefresh(false);
+    };
+
+    Game_Chronus.prototype.setDay = function (year, month, day) {
+        var newDay = (year - 1) * this.getDaysOfYear();
+        for (var i = 0; i < month - 1; i++) {
+            newDay += this._daysOfMonth[i];
+        }
+        newDay += day - 1;
+        this._dayMeter = newDay;
+        this.demandRefresh(true);
+    };
+
+    Game_Chronus.prototype.demandRefresh = function (effectRefreshFlg) {
+        this._demandRefresh = true;
+        this._frameCount = 0;
+        this.setGameVariable();
+        if (effectRefreshFlg) {
+            this.refreshTint(true);
+            this.controlWeather(true);
+        }
+    };
+
+    Game_Chronus.prototype.isNeedRefresh = function() {
+        var needRefresh = this._demandRefresh;
+        this._demandRefresh = false;
+        return needRefresh;
+    };
+
+    Game_Chronus.prototype.getDaysOfWeek = function () {
+        return this._weekNames.length;
+    };
+
+    Game_Chronus.prototype.getDaysOfMonth = function (month) {
+        return this._daysOfMonth[month - 1];
+    };
+
+    Game_Chronus.prototype.getDaysOfYear = function () {
+        var result = 0;
+        this._daysOfMonth.forEach(function(days) {result += days});
+        return result;
+    };
+
+    Game_Chronus.prototype.setGameVariable = function () {
+        this.setGameVariableSub('年のゲーム変数', this.getYear());
+        this.setGameVariableSub('月のゲーム変数', this.getMonth());
+        this.setGameVariableSub('日のゲーム変数', this.getDay());
+        this.setGameVariableSub('曜日IDのゲーム変数', this.getWeekIndex());
+        this.setGameVariableSub('曜日名のゲーム変数', this.getWeekName());
+        this.setGameVariableSub('時のゲーム変数', this.getHour());
+        this.setGameVariableSub('分のゲーム変数', this.getMinute());
+        this.setGameVariableSub('時間帯IDのゲーム変数', this.getTimeZone());
+        this.setGameVariableSub('天候IDのゲーム変数', this.getWeatherTypeId());
+    };
+
+    Game_Chronus.prototype.setGameVariableSub = function (paramName, value) {
+        var index = getParamNumber(paramName, 0, 5000);
+        if (index !== 0) $gameVariables.setValue(index, value);
+    };
+
+    Game_Chronus.prototype.getMonthOfYear = function () {
+        return this._daysOfMonth.length;
+    };
+
+    Game_Chronus.prototype.getWeekName = function () {
+        return this._weekNames[this.getWeekIndex()];
+    };
+
+    Game_Chronus.prototype.getWeekIndex = function () {
+        return this.isRealTime() ? this._nowDate.getDay() : this._dayMeter % this.getDaysOfWeek();
+    };
+
+    Game_Chronus.prototype.getYear = function () {
+        return this.isRealTime() ? this._nowDate.getFullYear() : Math.floor(this._dayMeter / this.getDaysOfYear()) + 1;
+    };
+
+    Game_Chronus.prototype.getMonth = function () {
+        if (this.isRealTime()) return this._nowDate.getMonth() + 1;
+        var days = this._dayMeter % this.getDaysOfYear();
+        for (var i = 0; i < this._daysOfMonth.length; i++) {
+            days -= this._daysOfMonth[i];
+            if (days < 0) return i + 1;
+        }
+        return null;
+    };
+
+    Game_Chronus.prototype.getDay = function () {
+        if (this.isRealTime()) return this._nowDate.getDate();
+        var days = this._dayMeter % this.getDaysOfYear();
+        for (var i = 0; i < this._daysOfMonth.length; i++) {
+            if (days < this._daysOfMonth[i]) return days + 1;
+            days -= this._daysOfMonth[i];
+        }
+        return null;
+    };
+
+    Game_Chronus.prototype.getHour = function () {
+        return this.isRealTime() ? this._nowDate.getHours() : Math.floor(this._timeMeter / 60);
+    };
+
+    Game_Chronus.prototype.getMinute = function () {
+        return this.isRealTime() ? this._nowDate.getMinutes() : this._timeMeter % 60;
+    };
+
+    Game_Chronus.prototype.getDateFormat = function(index) {
+        var format = getParamString('日時フォーマット' + String(index));
+        format = format.replace(/DY/gi, function() {
+            return this.getWeekName();
+        }.bind(this));
+        format = format.replace(/(Y+)/gi, function() {
+            return this.getValuePadding(this.getYear(), arguments[1].length);
+        }.bind(this));
+        format = format.replace(/MM/gi, function() {
+            return this.getValuePadding(this.getMonth(), String(this.getMonthOfYear()).length);
+        }.bind(this));
+        format = format.replace(/DD/gi, function() {
+            return this.getValuePadding(this.getDay(),
+                String(this.getDaysOfMonth(this.getMonth())).length);
+        }.bind(this));
+        format = format.replace(/HH24/gi, function() {
+            return this.getValuePadding(this.getHour(), 2);
+        }.bind(this));
+        format = format.replace(/HH/gi, function() {
+            return this.getValuePadding(this.getHour() % 12, 2);
+        }.bind(this));
+        format = format.replace(/AM/gi, function() {
+            return Math.floor(this.getHour() / 12) === 0 ?
+                $gameSystem.isJapanese() ? '午前' : 'Morning  ' :
+                $gameSystem.isJapanese() ? '午後' : 'Afternoon';
+        }.bind(this));
+        format = format.replace(/MI/gi, function() {
+            return this.getValuePadding(this.getMinute(), 2);
+        }.bind(this));
+        return format;
+    };
+
+    Game_Chronus.prototype.getTimeZone = function () {
+        return this.isHourInRange(0, 4)   ? 0 :
+               this.isHourInRange(5, 6)   ? 1 :
+               this.isHourInRange(7, 11)  ? 2 :
+               this.isHourInRange(12, 16) ? 3 :
+               this.isHourInRange(17, 18) ? 4 :
+               this.isHourInRange(19, 21) ? 5 :
+               this.isHourInRange(22, 24) ? 0 : null;
+    };
+
+    Game_Chronus.prototype.getWeatherTypeId = function () {
+        return this._weatherType;
+    };
+
+    Game_Chronus.prototype.getWeatherType = function () {
+        return Game_Chronus.weatherTypes[this.getWeatherTypeId()];
+    };
+
+    Game_Chronus.prototype.getValuePadding = function(value, digit, padChar) {
+        if (arguments.length === 2) padChar = '0';
+        var result = "";
+        for (var i = 0; i < digit; i++) result += padChar;
+        result += value;
+        return result.substr(-digit);
+    };
+
+    Game_Chronus.prototype.isHourInRange = function(min, max) {
+        var hour = this.getHour();
+        return hour >= min && hour <= max;
+    };
+
+    Game_Chronus.prototype.getAnalogueHour = function() {
+        return this.getHour() + (this.getAnalogueMinute() / 60);
+    };
+
+    Game_Chronus.prototype.getAnalogueMinute = function() {
+        return this.getMinute() + (this.isRealTime() ? 0 : this._frameCount / 60 * this._timeAutoAdd);
+    };
+
+    Game_Chronus.prototype.getRotationHourHand = function() {
+        return (this.getAnalogueHour() % 12) * (360 / 12) * Math.PI / 180;
+    };
+
+    Game_Chronus.prototype.getRotationMinuteHand = function() {
+        return this.getAnalogueMinute() * (360 / 60) * Math.PI / 180;
+    };
+})();

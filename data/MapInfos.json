@@ -1,6 +1,6 @@
 [
 null,
-{"id":1,"expanded":false,"name":"森の町","order":3,"parentId":2,"scrollX":1109,"scrollY":1467},
+{"id":1,"expanded":false,"name":"森の町","order":3,"parentId":2,"scrollX":846,"scrollY":974},
 {"id":2,"expanded":true,"name":"ゲーム内時間の導入プラグイン","order":2,"parentId":6,"scrollX":819,"scrollY":461},
 {"id":3,"expanded":false,"name":"塔1F","order":5,"parentId":2,"scrollX":1157,"scrollY":1467},
 {"id":4,"expanded":false,"name":"宿屋1F","order":4,"parentId":1,"scrollX":715.5555555555555,"scrollY":550.2222222222222},
