@@ -56,6 +56,7 @@
 
     var _AudioManager_shouldUseHtml5Audio = AudioManager.shouldUseHtml5Audio;
     AudioManager.shouldUseHtml5Audio = function() {
+        alert(Utils.isIe());
         return _AudioManager_shouldUseHtml5Audio.apply(this, arguments) || Utils.isIe();
     };
 
