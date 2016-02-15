@@ -46,7 +46,11 @@
 
     var _Sprite_setBlendColor = Sprite.prototype.setBlendColor;
     Sprite.prototype.setBlendColor = function(color) {
+        Graphics._canUseDifferenceBlend = false;
+        Graphics._canUseSaturationBlend = false;
         _Sprite_setBlendColor.apply(this, arguments);
+        alert(Graphics._canUseDifferenceBlend);
+        alert(Graphics._canUseSaturationBlend);
     };
 })();
 
