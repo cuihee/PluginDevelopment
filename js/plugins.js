@@ -25,7 +25,7 @@ var $plugins =
 {"name":"TkoolMV_PluginCommandBook","status":false,"description":"プラグインコマンド集","parameters":{"制御文字の拡張":"はい"}},
 {"name":"CharacterGraphicExtend","status":false,"description":"キャラクターグラフィック表示拡張プラグイン","parameters":{"パラメータ":"デフォルト値"}},
 {"name":"RegionTerrain","status":false,"description":"リージョンにタイル属性を付与するプラグイン","parameters":{"梯子リージョンID":"1","茂みリージョンID":"2","カウンターリージョンID":"3","ダメージ床リージョンID":"4"}},
-{"name":"MessageSkip","status":false,"description":"メッセージスキッププラグイン","parameters":{"スキップキー":"S","オートキー":"A","スキップアイコン":"140","オートアイコン":"75","オート待機フレーム":"240","イベント終了で解除":"OFF"}},
+{"name":"MessageSkip","status":true,"description":"メッセージスキッププラグイン","parameters":{"スキップキー":"S","オートキー":"A","スキップアイコン":"140","オートアイコン":"75","オート待機フレーム":"240","イベント終了で解除":"OFF"}},
 {"name":"DWindow","status":false,"description":"動的ウィンドウ生成プラグイン","parameters":{"X座標の変数番号":"1","Y座標の変数番号":"2","横幅の変数番号":"3","高さの変数番号":"4","最前面に表示":"ON"}},
 {"name":"CommonInterceptor","status":false,"description":"割り込みコモンイベントプラグイン","parameters":{"ニューゲームコモン":"5","ロードコモン":"6","メニューコモン":"7"}},
 {"name":"YEP_MessageCore","status":true,"description":"メッセージの表示方法や機能をカスタマイズすることができます。","parameters":{"---一般---":"","Default Rows":"4","Default Width":"Graphics.boxWidth","Face Indent":"Window_Base._faceWidth + 24","Fast Forward":"Input.isPressed('pagedown')","Word Wrapping":"false","Description Wrap":"false","---フォント---":"","Font Name":"GameFont","Font Size":"28","Font Size Change":"12","Font Changed Max":"96","Font Changed Min":"12","---Name Box---":"","Name Box Buffer X":"-28","Name Box Buffer Y":"0","Name Box Padding":"this.standardPadding() * 4","Name Box Color":"0","Name Box Clear":"false","Name Box Added Text":"\\c[6]"}},
