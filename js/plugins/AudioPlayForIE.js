@@ -56,8 +56,12 @@
 
     var _AudioManager_shouldUseHtml5Audio = AudioManager.shouldUseHtml5Audio;
     AudioManager.shouldUseHtml5Audio = function() {
-        alert(Utils.isIe() + navigator.userAgent.toLowerCase());
         return _AudioManager_shouldUseHtml5Audio.apply(this, arguments) || Utils.isIe();
+    };
+
+    var _SceneManager_initAudio = SceneManager.initAudio;
+    SceneManager.initAudio = function() {
+        if (!Utils.isIe()) _SceneManager_initAudio.apply(this, arguments);
     };
 
     Utils.isIe = function() {
