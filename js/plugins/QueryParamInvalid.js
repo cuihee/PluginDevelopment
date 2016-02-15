@@ -31,7 +31,7 @@
  * @author トリアコンタン
  *
  * @param 例外
- * @desc 例外的に有効にするパラメータをカンマ区切りで指定してください。
+ * @desc 無効化しないパラメータ（カンマ区切り）を指定。
  * noaudio,webgl,canvas
  * @default
  *

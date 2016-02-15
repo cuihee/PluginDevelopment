@@ -47,5 +47,5 @@ var $plugins =
 {"name":"SetupOptionCustomize","status":true,"description":"起動オプション調整プラグイン","parameters":{"描画モード":"2","テストプレー":"ON","FPS表示":"ON","オーディオ無効":"ON","任意オプション":"","ユーザオプション無効":"OFF"}},
 {"name":"LoadLight","status":false,"description":"マップ処理負荷軽減プラグイン","parameters":{"色調変更無効化":"ON","ピクチャ最大表示数":"5"}},
 {"name":"AudioPlayForIE","status":true,"description":"IEのオーディオ有効化プラグイン","parameters":{}},
-{"name":"QueryParamInvalid","status":true,"description":"クエリパラメータ無効化プラグイン","parameters":{"例外":""}}
+{"name":"QueryParamInvalid","status":true,"description":"クエリパラメータ無効化プラグイン","parameters":{"例外":"noaudio,webgl,canvas,test,noaudio"}}
 ];
