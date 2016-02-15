@@ -107,6 +107,7 @@
         Spriteset_Map.prototype.updateParallax = function() {};
         Spriteset_Map.prototype.createWeather = function() {};
         Spriteset_Map.prototype.updateWeather = function() {};
+        //Sprite.prototype.setBlendColor = function(color) {};
     }
 })();
 

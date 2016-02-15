@@ -43,5 +43,10 @@
     Scene_Boot.prototype.start = function() {
         _Scene_Boot_start.apply(this, arguments);
     };
+
+    var _Sprite_setBlendColor = Sprite.prototype.setBlendColor;
+    Sprite.prototype.setBlendColor = function(color) {
+        _Sprite_setBlendColor.apply(this, arguments);
+    };
 })();
 
