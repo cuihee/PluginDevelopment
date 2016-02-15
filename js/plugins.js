@@ -13,7 +13,7 @@ var $plugins =
 {"name":"PictureVariableSetting","status":true,"description":"ピクチャの変数設定プラグイン","parameters":{"初期値":"ON","ピクチャ表示最大数":"150"}},
 {"name":"BattleActorFaceVisibility","status":true,"description":"戦闘中顔グラフィック表示プラグイン","parameters":{"ウィンドウ表示":"ON","ウィンドウX座標":"","ウィンドウY座標":""}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"document.title = 'Ctrlでクレジット表示';","スクリプト3":"","スクリプト4":""}},
-{"name":"ChangeWindowTouchPolicy","status":false,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
+{"name":"ChangeWindowTouchPolicy","status":true,"description":"ウィンドウタッチ仕様変更プラグイン","parameters":{"枠外タッチ動作":"キャンセル"}},
 {"name":"DynamicDatabase","status":true,"description":"動的データベース構築プラグイン","parameters":{}},
 {"name":"BugFixPictureRotation","status":true,"description":"ピクチャの回転バグ修正プラグイン","parameters":{}},
 {"name":"MessageWindowHidden","status":true,"description":"メッセージウィンドウ一時消去プラグイン","parameters":{"ボタン名称":"shift"}},
