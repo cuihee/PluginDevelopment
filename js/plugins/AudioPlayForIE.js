@@ -68,5 +68,11 @@
         var agent = navigator.userAgent.toLowerCase();
         return !!(agent.match(/msie/) || agent.match(/trident/));
     };
+
+    var _Html5Audio__setupEventHandlers = Html5Audio._setupEventHandlers;
+    Html5Audio._setupEventHandlers = function () {
+        _Html5Audio__setupEventHandlers.apply(this, arguments);
+        document.addEventListener('keydown', this._onTouchStart.bind(this));
+    };
 })();
 
