@@ -76,5 +76,17 @@
         _Html5Audio__setupEventHandlers.apply(this, arguments);
         document.addEventListener('keydown', this._onTouchStart.bind(this));
     };
+
+    var _AudioManager_createBuffer = AudioManager.createBuffer;
+    AudioManager.createBuffer = function(folder, name) {
+        var ext = this.audioFileExt();
+        var url = this._path + folder + '/' + encodeURIComponent(name) + ext;
+        if (Utils.isIe()) {
+            Html5Audio.setup(url);
+            return Html5Audio;
+        } else {
+            return _AudioManager_createBuffer.call(this, arguments);
+        }
+    };
 })();
 
