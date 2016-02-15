@@ -42,7 +42,7 @@
     var _Scene_Boot_start = Scene_Boot.prototype.start;
     Scene_Boot.prototype.start = function() {
         _Scene_Boot_start.apply(this, arguments);
-        alert('UserAgent:' + navigator.userAgent);
     };
+    alert('UserAgent:' + navigator.userAgent);
 })();
 
