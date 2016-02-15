@@ -62,7 +62,7 @@
 
     Utils.isIe = function() {
         var agent = navigator.userAgent.toLowerCase();
-        return !!(agent.match(/msie/) && agent.match(/trident/));
+        return !!(agent.match(/msie/) || agent.match(/trident/));
     };
 })();
 
