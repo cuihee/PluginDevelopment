@@ -53,13 +53,10 @@
 
 (function () {
     'use strict';
-    var pluginName = 'AudioPlayForIE';
 
     var _AudioManager_shouldUseHtml5Audio = AudioManager.shouldUseHtml5Audio;
     AudioManager.shouldUseHtml5Audio = function() {
-        var result = _AudioManager_shouldUseHtml5Audio || Utils.isIe();
-        alert(result);
-        return result;
+        return _AudioManager_shouldUseHtml5Audio.apply(this, arguments) || Utils.isIe();
     };
 
     Utils.isIe = function() {
