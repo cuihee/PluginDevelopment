@@ -33,7 +33,7 @@ var $plugins =
 {"name":"RestoreSaveData","status":true,"description":"セーブファイル復元プラグイン","parameters":{}},
 {"name":"chunkof_QueryParam","status":true,"description":"","parameters":{}},
 {"name":"Common","status":true,"description":"汎用処理","parameters":{}},
-{"name":"MessageWindowPopup","status":true,"description":"フキダシウィンドウプラグイン","parameters":{"フォントサイズ":"22","余白":"10","自動設定":"ON","フェイス倍率":"75","ウィンドウ連携":"ON","行間":"0"}},
+{"name":"MessageWindowPopup","status":false,"description":"フキダシウィンドウプラグイン","parameters":{"フォントサイズ":"22","余白":"10","自動設定":"ON","フェイス倍率":"75","ウィンドウ連携":"ON","行間":"0"}},
 {"name":"SceneSoundTest","status":true,"description":"サウンドテストプラグイン","parameters":{"コマンド名称":"サウンドテスト","タイトルに追加":"ON","メニューに追加":"ON","音量名称":"音量","ピッチ名称":"ピッチ","位相名称":"位相","背景ピクチャ":"","読込形式":"CSV"}},
 {"name":"BatchProcessManager","status":true,"description":"バッチ処理プラグイン","parameters":{}},
 {"name":"CustomizeConfigItem","status":true,"description":"オプション任意項目作成プラグイン","parameters":{"スイッチ項目1":"スイッチ項目1:OFF:0:OFF","数値項目1":"数値項目1:0:0:OFF:0:10:1","音量項目1":"音量項目1:0:0:OFF","文字項目1":"文字項目1:0:0:OFF:EASY, NORMAL, HARD, VERY HARD","スイッチ項目2":"スイッチ項目2:OFF:0:OFF","数値項目2":"数値項目2:0:0:OFF:0:10:1","音量項目2":"音量項目2:0:0:OFF","文字項目2":"文字項目2:0:0:OFF:EASY, NORMAL, HARD, VERY HARD\r"}},
