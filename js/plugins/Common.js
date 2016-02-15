@@ -43,12 +43,5 @@
     Scene_Boot.prototype.start = function() {
         _Scene_Boot_start.apply(this, arguments);
     };
-
-    var _Sprite_setBlendColor = Sprite.prototype.setBlendColor;
-    Sprite.prototype.setBlendColor = function(color) {
-        if (Math.abs(this._lastAlpha - color[3]) < 16) return;
-        _Sprite_setBlendColor.apply(this, arguments);
-        this._lastAlpha = color[3];
-    };
 })();
 
