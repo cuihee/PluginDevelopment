@@ -3,8 +3,7 @@
 var $plugins =
 [
 {"name":"DevToolsManage","status":true,"description":"デベロッパツール管理プラグイン","parameters":{"開始時に起動":"ON","常に前面表示":"ON","デベロッパツール表示位置":"0,0,1200,800","最小化切替キー":"F8","リロードキー":"F12","画面の左寄せキー":"F11","FPS表示":"OFF","タイトルカット":"OFF"}},
-{"name":"CustomizeConfigDefault","status":true,"description":"Optionsデフォルト値設定プラグイン","parameters":{"alwaysDash":"ON","commandRemember":"OFF","bgmVolume":"100","bgsVolume":"0","meVolume":"0","seVolume":"0"}},
-{"name":"Chronus","status":true,"description":"ゲーム内時間の導入プラグイン","parameters":{"月ごとの日数配列":"31,28,31,30,31,30,31,31,30,31,30,31","曜日配列":"(日),(月),(火),(水),(木),(金),(土)","自然時間加算":"5","場所移動時間加算":"30","戦闘時間加算(固定)":"30","戦闘時間加算(ターン)":"5","年のゲーム変数":"8","月のゲーム変数":"9","日のゲーム変数":"10","曜日IDのゲーム変数":"13","曜日名のゲーム変数":"14","時のゲーム変数":"11","分のゲーム変数":"12","時間帯IDのゲーム変数":"16","天候IDのゲーム変数":"17","日時フォーマット1":"YYYY年 MM月 DD日 DY","日時フォーマット2":"AMHH時 MI分","カレンダー表示X座標":"8","カレンダー表示Y座標":"8","文字盤画像ファイル":"clock_0","長針画像ファイル":"clock_02","短針画像ファイル":"clock_03","時計X座標":"84","時計Y座標":"156"}},
+{"name":"CustomizeConfigDefault","status":true,"description":"Optionsデフォルト値設定プラグイン","parameters":{"alwaysDash":"ON","commandRemember":"ON","bgmVolume":"20","bgsVolume":"20","meVolume":"20","seVolume":"20"}},
 {"name":"ParallaxesNonBlur","status":true,"description":"視差ゼロ遠景のぼかし除去プラグイン","parameters":{}},
 {"name":"MapRapid","status":true,"description":"マップ高速化プラグイン","parameters":{"testPlayOnly":"ON","showMessageRapid":"ON","windowOpenRapid":"ON","fadeRapid":"ON"}},
 {"name":"PictureCallCommon","status":true,"description":"ピクチャのボタン化プラグイン","parameters":{"透明色を考慮":"ON","ピクチャ番号の変数番号":"21","ポインタX座標の変数番号":"41","ポインタY座標の変数番号":"42"}},
@@ -44,5 +43,7 @@ var $plugins =
 {"name":"AutomaticState","status":true,"description":"ステート自動付与プラグイン","parameters":{"パラメータ":"デフォルト値"}},
 {"name":"GameStartEval","status":true,"description":"開始時スクリプト実行プラグイン","parameters":{"スクリプト1":"Input.keyMapper[8] = 'escape';","スクリプト2":"","スクリプト3":"","スクリプト4":""}},
 {"name":"BugFixWebPlayTest","status":true,"description":"Web実行におけるテストオプション防止プラグイン","parameters":{}},
-{"name":"SetupOptionCustomize","status":true,"description":"起動オプション調整プラグイン","parameters":{"描画モード":"0","テストプレー":"OFF","FPS表示":"ON","オーディオ無効":"OFF","任意オプション":"","ユーザオプション無効":"OFF"}}
+{"name":"SetupOptionCustomize","status":true,"description":"起動オプション調整プラグイン","parameters":{"描画モード":"0","テストプレー":"ON","FPS表示":"ON","オーディオ無効":"OFF","任意オプション":"","ユーザオプション無効":"OFF"}},
+{"name":"Chronus","status":true,"description":"ゲーム内時間の導入プラグイン","parameters":{"月ごとの日数配列":"31,28,31,30,31,30,31,31,30,31,30,31","曜日配列":"(日),(月),(火),(水),(木),(金),(土)","自然時間加算":"5","場所移動時間加算":"30","戦闘時間加算(固定)":"30","戦闘時間加算(ターン)":"5","年のゲーム変数":"8","月のゲーム変数":"9","日のゲーム変数":"10","曜日IDのゲーム変数":"13","曜日名のゲーム変数":"14","時のゲーム変数":"11","分のゲーム変数":"12","時間帯IDのゲーム変数":"16","天候IDのゲーム変数":"17","日時フォーマット1":"YYYY年 MM月 DD日 DY","日時フォーマット2":"AMHH時 MI分","カレンダー表示X座標":"8","カレンダー表示Y座標":"8","文字盤画像ファイル":"clock_0","長針画像ファイル":"clock_02","短針画像ファイル":"clock_03","時計X座標":"84","時計Y座標":"156"}},
+{"name":"LoadLight","status":true,"description":"マップ処理負荷軽減プラグイン","parameters":{"色調変更無効化":"ON","ピクチャ最大表示数":"5"}}
 ];
