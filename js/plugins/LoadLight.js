@@ -79,7 +79,7 @@
 
     var getParamBoolean = function(paramNames) {
         var value = getParamOther(paramNames);
-        return (value || '').toUpperCase() == 'ON';
+        return (value || '').toUpperCase() === 'ON';
     };
 
     var getParamOther = function(paramNames) {
@@ -98,15 +98,16 @@
             return paramMaxPictures;
         };
     }
+
     if (paramToneInvalid) {
         Spriteset_Base.prototype.updateToneChanger = function(){};
         Spriteset_Base.prototype.updateScreenSprites = function(){};
         Spriteset_Base.prototype.createToneChanger = function(){};
         Spriteset_Base.prototype.createScreenSprites = function(){};
-        Spriteset_Map.prototype.createParallax = function() {};
-        Spriteset_Map.prototype.updateParallax = function() {};
-        Spriteset_Map.prototype.createWeather = function() {};
-        Spriteset_Map.prototype.updateWeather = function() {};
+        Spriteset_Map.prototype.createParallax = function(){};
+        Spriteset_Map.prototype.updateParallax = function(){};
+        Spriteset_Map.prototype.createWeather = function(){};
+        Spriteset_Map.prototype.updateWeather = function(){};
     }
 
     var _Sprite_setBlendColor = Sprite.prototype.setBlendColor;
