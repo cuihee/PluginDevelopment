@@ -74,8 +74,7 @@
     var _Html5Audio__setupEventHandlers = Html5Audio._setupEventHandlers;
     Html5Audio._setupEventHandlers = function () {
         _Html5Audio__setupEventHandlers.apply(this, arguments);
-        //document.addEventListener('', this._onTouchStart.bind(this));
-        window.addEventListener('focus', this._onTouchStart.bind(this));
+        document.addEventListener('keydown', this._onTouchStart.bind(this));
     };
 })();
 
