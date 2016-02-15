@@ -32,11 +32,14 @@
  *
  * @param 例外
  * @desc 無効化しないパラメータ（カンマ区切り）を指定。
- * noaudio,webgl,canvas
+ * noaudio,webgl,canvas,test,noaudio,showfps,etest,btest
  * @default
  *
  * @help ブラウザ実行の際に指定されたクエリパラメータを無効化します。
  * ローカル実行の場合は特に何もしません。
+ *
+ * デフォルトのパラメータ一覧
+ * noaudio,webgl,canvas,test,noaudio,showfps,etest,btest
  *
  * このプラグインにはプラグインコマンドはありません。
  *
