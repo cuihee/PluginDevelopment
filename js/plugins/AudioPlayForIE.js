@@ -30,18 +30,16 @@
  * This plugin is released under the MIT License.
  */
 /*:ja
- * @plugindesc プラグイン名称が未入力です。
+ * @plugindesc IEのオーディオ有効化プラグイン
  * @author トリアコンタン
  *
- * @param パラメータ
- * @desc パラメータ説明
- * @default デフォルト値
+ * @help Html5Audioを利用してIEでBGM等のオーディオを演奏します。
+ * いくつかの制約があります。ゲーム中の
  *
- * @help プラグイン説明が未入力です。
- *
- * プラグインコマンド詳細
- *  イベントコマンド「プラグインコマンド」から実行。
- *  （パラメータの間は半角スペースで区切る）
+ * 1. IE8以前では動作しません。
+ * 2. ピッチの変更が効きません。
+ * 3. タッチかクリックするまでオーディオは演奏されません。
+ * 4. noaudioパラメータを無視します。
  *
  * このプラグインにはプラグインコマンドはありません。
  *
@@ -61,18 +59,23 @@
 
     var _SceneManager_initAudio = SceneManager.initAudio;
     SceneManager.initAudio = function() {
-        if (!Utils.isIe()) _SceneManager_initAudio.apply(this, arguments);
+        try {
+            _SceneManager_initAudio.apply(this, arguments);
+        } catch (e) {
+            if (!Utils.isIe()) throw e;
+        }
     };
 
     Utils.isIe = function() {
-        var agent = navigator.userAgent.toLowerCase();
-        return !!(agent.match(/msie/) || agent.match(/trident/));
+        var agent = navigator.userAgent;
+        return !!(agent.match(/msie/i) || agent.match(/trident/i));
     };
 
     var _Html5Audio__setupEventHandlers = Html5Audio._setupEventHandlers;
     Html5Audio._setupEventHandlers = function () {
         _Html5Audio__setupEventHandlers.apply(this, arguments);
-        document.addEventListener('keydown', this._onTouchStart.bind(this));
+        //document.addEventListener('', this._onTouchStart.bind(this));
+        window.addEventListener('focus', this._onTouchStart.bind(this));
     };
 })();
 
