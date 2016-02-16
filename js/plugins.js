@@ -48,5 +48,5 @@ var $plugins =
 {"name":"LoadLight","status":false,"description":"マップ処理負荷軽減プラグイン","parameters":{"色調変更無効化":"ON","ピクチャ最大表示数":"5"}},
 {"name":"AudioPlayForIE","status":true,"description":"IEのオーディオ有効化プラグイン","parameters":{}},
 {"name":"SetupOptionInvalid","status":true,"description":"起動オプション無効化プラグイン","parameters":{"例外":"noaudio,test,showfps"}},
-{"name":"SensorInput","status":true,"description":"プラグイン名称","parameters":{"パラメータ":"デフォルト値"}}
+{"name":"SensorInput","status":true,"description":"センサー情報取得プラグイン","parameters":{"Z軸傾き変数":"47","Y軸傾き変数":"48","X軸傾き変数":"49","傾き絶対値取得":"OFF"}}
 ];
