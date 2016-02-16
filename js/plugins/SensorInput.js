@@ -187,7 +187,7 @@ function SensorInput() {
         this._accelerationX       = 0;
         this._accelerationY       = 0;
         this._accelerationZ       = 0;
-        this._sensitive           = 1;
+        this._sensitive           = 0.1;
     };
 
     SensorInput.update = function() {
@@ -202,15 +202,15 @@ function SensorInput() {
     };
 
     SensorInput.getOrientationAlpha = function() {
-        return (this._orientationAlpha - this._orientationAbsolute ? 0 : this._neutralAlpha) * this._sensitive;
+        return (this._orientationAlpha - (this._orientationAbsolute ? 0 : this._neutralAlpha)) * this._sensitive;
     };
 
     SensorInput.getOrientationBeta = function() {
-        return (this._orientationBeta - this._orientationAbsolute ? 0 : this._neutralBeta) * this._sensitive;
+        return (this._orientationBeta - (this._orientationAbsolute ? 0 : this._neutralBeta)) * this._sensitive;
     };
 
     SensorInput.getOrientationGamma = function() {
-        return (this._orientationGamma - this._orientationAbsolute ? 0 : this._neutralGamma) * this._sensitive;
+        return (this._orientationGamma - (this._orientationAbsolute ? 0 : this._neutralGamma)) * this._sensitive;
     };
 
     SensorInput.setNeutralOrientation = function() {
