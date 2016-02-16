@@ -187,7 +187,7 @@ function SensorInput() {
         this._accelerationX       = 0;
         this._accelerationY       = 0;
         this._accelerationZ       = 0;
-        this._sensitive           = 0.1;
+        this._sensitive           = 1;
     };
 
     SensorInput.update = function() {
