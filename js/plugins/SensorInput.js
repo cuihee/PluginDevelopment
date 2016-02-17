@@ -120,6 +120,26 @@ function SensorInput() {
         return null;
     };
 
+    if (!Object.prototype.hasOwnProperty('iterate')) {
+        Object.defineProperty(Object.prototype, 'iterate', {
+            value : function (handler) {
+                Object.keys(this).forEach(function (key, index) {
+                    handler.call(this, key, this[key], index);
+                }, this);
+            }
+        });
+    }
+
+    /**
+     * Math.truncate
+     *
+     * @static
+     */
+    Math.truncate = function(originalValue) {
+        var sign = originalValue < 0 ? -1 : 1;
+        return Math.floor(Math.abs(originalValue)) * sign;
+    };
+
     //=============================================================================
     // Game_Interpreter
     //  プラグインコマンドを追加定義します。
@@ -230,9 +250,17 @@ function SensorInput() {
         this._motionBeta          = 0;
         this._motionGamma         = 0;
         this._sensitive           = 0.1;
+        this._sensorStates        = {};
+        this._changedStates       = {};
     };
 
     SensorInput.update = function() {
+        this.updateVariables();
+        this.updateInput();
+    };
+
+    /** @private */
+    SensorInput.updateVariables = function() {
         if (!$gameVariables) return;
         $gameVariables.setValueSilent(paramOrientationZ, this.getOrientationAlpha());
         $gameVariables.setValueSilent(paramOrientationX, this.getOrientationBeta());
@@ -242,20 +270,59 @@ function SensorInput() {
         $gameVariables.setValueSilent(paramMotionX, this.getMotionGamma());
     };
 
+    /** @private */
+    SensorInput.updateInput = function() {
+        this._changedStates = {};
+        var beta = this.getOrientationBeta(false);
+        this.setState('left' , beta >= 2);
+        this.setState('right', beta <= -2);
+        var gamma = this.getOrientationGamma(false);
+        this.setState('up' , gamma >= 2);
+        this.setState('down', gamma <= -2);
+        Input.updateSensor(this._changedStates);
+    };
+
+    Input.updateSensor = function(sensorState) {
+        sensorState.iterate(function (key, value) {
+            this._currentState[key] = value;
+        }.bind(this));
+    };
+
+    /** @private */
+    SensorInput.getState = function(name) {
+        return !!this._sensorStates[name];
+    };
+
+    /** @private */
+    SensorInput.setState = function(name, value) {
+        value = !!value;
+        if (this.getState(name) !== value) {
+            this._sensorStates[name] = value;
+            this._changedStates[name] = value;
+        }
+    };
+
     SensorInput.setSensitive = function(value) {
         this._sensitive = value.clamp(0, 10000);
     };
 
-    SensorInput.getOrientationAlpha = function() {
-        return (this._orientationAlpha - (this._orientationAbsolute ? 0 : this._neutralAlpha)) * this._sensitive;
+    SensorInput.getOrientationAlpha = function(absoluteFlg) {
+        return this._getOrientationCommon(this._orientationAlpha, this._neutralAlpha, absoluteFlg);
     };
 
-    SensorInput.getOrientationBeta = function() {
-        return (this._orientationBeta - (this._orientationAbsolute ? 0 : this._neutralBeta)) * this._sensitive;
+    SensorInput.getOrientationBeta = function(absoluteFlg) {
+        return this._getOrientationCommon(this._orientationBeta, this._neutralBeta, absoluteFlg);
     };
 
-    SensorInput.getOrientationGamma = function() {
-        return (this._orientationGamma - (this._orientationAbsolute ? 0 : this._neutralGamma)) * this._sensitive;
+    SensorInput.getOrientationGamma = function(absoluteFlg) {
+        return this._getOrientationCommon(this._orientationGamma, this._neutralGamma, absoluteFlg);
+    };
+
+    /** @private */
+    SensorInput._getOrientationCommon = function(absolute, neutral, absoluteFlg) {
+        if (absoluteFlg === undefined) absoluteFlg = this._orientationAbsolute;
+        var value = (absolute - (absoluteFlg ? 0 : neutral)) * this._sensitive;
+        return Math.truncate(value);
     };
 
     SensorInput.refreshNeutralOrientation = function() {
@@ -265,28 +332,36 @@ function SensorInput() {
     };
 
     SensorInput.getMotionAlpha = function() {
-        return this._motionAlpha * this._sensitive;
+        return this._getMotionCommon(this._motionAlpha);
     };
 
     SensorInput.getMotionBeta = function() {
-        return this._motionBeta * this._sensitive;
+        return this._getMotionCommon(this._motionBeta);
     };
 
     SensorInput.getMotionGamma = function() {
-        return this._motionGamma * this._sensitive;
+        return this._getMotionCommon(this._motionGamma);
     };
 
+    /** @private */
+    SensorInput._getMotionCommon = function(motion) {
+        return Math.truncate(motion * this._sensitive);
+    };
+
+    /** @private */
     SensorInput._setupEventHandlers = function() {
         window.addEventListener('deviceorientation', this._onDeviceOrientation.bind(this), true);
         window.addEventListener('devicemotion', this._onDeviceMotion.bind(this), true);
     };
 
+    /** @private */
     SensorInput._onDeviceOrientation = function(event) {
         this._orientationAlpha    = event.alpha;
         this._orientationBeta     = event.beta;
         this._orientationGamma    = event.gamma;
     };
 
+    /** @private */
     SensorInput._onDeviceMotion = function(event) {
         this._motionAlpha = event.rotationRate.alpha;
         this._motionBeta  = event.rotationRate.beta;
