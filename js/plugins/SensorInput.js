@@ -32,10 +32,6 @@
 /*:ja
  * @plugindesc センサー情報取得プラグイン
  * @author トリアコンタン
- * 
- * @param Z軸傾き変数
- * @desc Z軸方向のデバイスの傾き度合いを格納する変数番号
- * @default
  *
  * @param Y軸傾き変数
  * @desc Y軸方向のデバイスの傾き度合いを格納する変数番号
@@ -45,17 +41,42 @@
  * @desc X軸方向のデバイスの傾き度合いを格納する変数番号
  * @default
  *
+ * @param Z軸傾き変数
+ * @desc Z軸方向のデバイスの傾き度合いを格納する変数番号
+ * @default
+ *
  * @param 傾き絶対値取得
  * @desc ONにすると傾きの度合いを絶対値で取得します。
  * OFFにするとニュートラルポジションからの相対値で取得します。
  * @default OFF
  *
+ * @param X軸加速度変数
+ * @desc X軸方向のデバイスの加速度を格納する変数番号
+ * @default
+ *
+ * @param Y軸加速度変数
+ * @desc Y軸方向のデバイスの加速度を格納する変数番号
+ * @default
+ *
+ * @param Z軸加速度変数
+ * @desc Z軸方向のデバイスの加速度を格納する変数番号
+ * @default
+ *
  * @help モバイル端末のハードウェアに搭載されたセンサーの情報を取得して
  * 指定したゲーム変数に格納します。
  *
- * ジャイロセンサー
- * 端末の傾き状態を3次元で取得して変数に格納します。
+ * 方向センサー
+ * 端末の傾き状態を3軸で取得して変数に格納します。
  * 絶対指定と、ニュートラルポジションからの相対指定の双方が可能です。
+ *
+ * 加速度センサー
+ * 端末の加速度を3軸で取得して変数に格納します。
+ *
+ * 照度センサー
+ * 端末の周囲の明るさを取得して変数に格納します。
+ *
+ * 近接センサー
+ * 端末の付近にある物体を検知して結果を変数に格納します。
  *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
@@ -135,6 +156,9 @@ function SensorInput() {
     var paramOrientationZ = getParamNumber(['Z軸傾き変数', 'OrientationZ'], 0, 5000);
     var paramOrientationY = getParamNumber(['Y軸傾き変数', 'OrientationY'], 0, 5000);
     var paramOrientationX = getParamNumber(['X軸傾き変数', 'OrientationX'], 0, 5000);
+    var paramMotionZ = getParamNumber(['Z軸加速度変数', 'MotionZ'], 0, 5000);
+    var paramMotionY = getParamNumber(['Y軸加速度変数', 'MotionY'], 0, 5000);
+    var paramMotionX = getParamNumber(['X軸加速度変数', 'MotionX'], 0, 5000);
 
     //=============================================================================
     // Game_Variables
@@ -149,6 +173,10 @@ function SensorInput() {
         }
     };
 
+    //=============================================================================
+    // SceneManager
+    //  センサー情報取得モジュールを初期化および更新します。
+    //=============================================================================
     var _SceneManager_initInput = SceneManager.initInput;
     SceneManager.initInput = function() {
         _SceneManager_initInput.apply(this, arguments);
@@ -161,10 +189,24 @@ function SensorInput() {
         SensorInput.update();
     };
 
+    //=============================================================================
+    // Window_Selectable
+    //  センサー情報取得モジュールを更新します。
+    //=============================================================================
     var _Window_Selectable_updateInputData = Window_Selectable.prototype.updateInputData;
     Window_Selectable.prototype.updateInputData = function() {
         _Window_Selectable_updateInputData.apply(this, arguments);
         SensorInput.update();
+    };
+
+    //=============================================================================
+    // Scene_Boot
+    //  ゲーム開始直後にニュートラルポジションを更新します。
+    //=============================================================================
+    var _Scene_Boot_start = Scene_Boot.prototype.start;
+    Scene_Boot.prototype.start = function() {
+        _Scene_Boot_start.apply(this, arguments);
+        SensorInput.refreshNeutralOrientation();
     };
 
     //=============================================================================
@@ -184,9 +226,9 @@ function SensorInput() {
         this._neutralAlpha        = 0;
         this._neutralBeta         = 0;
         this._neutralGamma        = 0;
-        this._accelerationX       = 0;
-        this._accelerationY       = 0;
-        this._accelerationZ       = 0;
+        this._motionAlpha         = 0;
+        this._motionBeta          = 0;
+        this._motionGamma         = 0;
         this._sensitive           = 0.1;
     };
 
@@ -195,6 +237,9 @@ function SensorInput() {
         $gameVariables.setValueSilent(paramOrientationZ, this.getOrientationAlpha());
         $gameVariables.setValueSilent(paramOrientationX, this.getOrientationBeta());
         $gameVariables.setValueSilent(paramOrientationY, this.getOrientationGamma());
+        $gameVariables.setValueSilent(paramMotionZ, this.getMotionAlpha());
+        $gameVariables.setValueSilent(paramMotionY, this.getMotionBeta());
+        $gameVariables.setValueSilent(paramMotionX, this.getMotionGamma());
     };
 
     SensorInput.setSensitive = function(value) {
@@ -213,10 +258,22 @@ function SensorInput() {
         return (this._orientationGamma - (this._orientationAbsolute ? 0 : this._neutralGamma)) * this._sensitive;
     };
 
-    SensorInput.setNeutralOrientation = function() {
+    SensorInput.refreshNeutralOrientation = function() {
         this._neutralAlpha    = this._orientationAlpha;
         this._neutralBeta     = this._orientationBeta;
         this._neutralGamma    = this._orientationGamma;
+    };
+
+    SensorInput.getMotionAlpha = function() {
+        return this._motionAlpha * this._sensitive;
+    };
+
+    SensorInput.getMotionBeta = function() {
+        return this._motionBeta * this._sensitive;
+    };
+
+    SensorInput.getMotionGamma = function() {
+        return this._motionGamma * this._sensitive;
     };
 
     SensorInput._setupEventHandlers = function() {
@@ -231,8 +288,8 @@ function SensorInput() {
     };
 
     SensorInput._onDeviceMotion = function(event) {
-        this._accelerationX = event.acceleration.x;
-        this._accelerationY = event.acceleration.y;
-        this._accelerationZ = event.acceleration.z;
+        this._motionAlpha = event.rotationRate.alpha;
+        this._motionBeta  = event.rotationRate.beta;
+        this._motionGamma = event.rotationRate.gamma;
     };
 })();

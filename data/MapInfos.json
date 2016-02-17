@@ -14,5 +14,5 @@ null,
 {"id":12,"expanded":false,"name":"サウンドテストプラグイン","order":10,"parentId":6,"scrollX":811,"scrollY":780},
 {"id":13,"expanded":false,"name":"アナザーニューゲームプラグイン","order":11,"parentId":6,"scrollX":819,"scrollY":461},
 {"id":14,"expanded":false,"name":"画像ロード遅延時のエラー修正プラグイン","order":12,"parentId":6,"scrollX":819,"scrollY":461},
-{"id":15,"expanded":false,"name":"センサー情報取得プラグイン","order":13,"parentId":6,"scrollX":819,"scrollY":461}
+{"id":15,"expanded":false,"name":"センサー情報取得プラグイン","order":13,"parentId":6,"scrollX":817,"scrollY":461}
 ]
