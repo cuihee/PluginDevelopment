@@ -11,7 +11,7 @@ Yanfly.Message = Yanfly.Message || {};
 
 //=============================================================================
  /*:
- * @plugindesc v1.02 Adds more features to the Message Window to customized
+ * @plugindesc v1.10 Adds more features to the Message Window to customized
  * the way your messages appear and functions.
  * @author Yanfly Engine Plugins
  *
@@ -33,10 +33,14 @@ Yanfly.Message = Yanfly.Message || {};
  * Default: Window_Base._faceWidth + 24
  * @default Window_Base._faceWidth + 24
  *
- * @param Fast Forward
- * @desc Using this will enable a fast forward button to skip forward
- * quickly. If you don't wish to use this, use 'false' instead.
- * @default Input.isPressed('pagedown')
+ * @param Fast Forward Key
+ * @desc This is the key used for fast forwarding.
+ * @default pagedown
+ *
+ * @param Enable Fast Forward
+ * @desc Enable fast forward button for your messages by default?
+ * NO - false     YES - true
+ * @default true
  *
  * @param Word Wrapping
  * @desc Use this to enable or disable word wrapping by default.
@@ -44,8 +48,13 @@ Yanfly.Message = Yanfly.Message || {};
  * @default false
  *
  * @param Description Wrap
- * @desc Use this to enable or disable word wrapping for descriptions.
+ * @desc Enable or disable word wrapping for descriptions.
  * OFF - false     ON - true
+ * @default false
+ *
+ * @param Word Wrap Space
+ * @desc Insert a space with manual line breaks?
+ * NO - false     YES - true
  * @default false
  *
  * @param ---Font---
@@ -252,29 +261,66 @@ Yanfly.Message = Yanfly.Message || {};
  * to change various aspects about the Message system.
  *
  * Plugin Comand
- *   MessageRows 6          = Changes the Message Rows displayed to 6. If you
- *                            are using continuous Show Text events, this will
- *                            continue displaying the following lines's texts
- *                            until it hits the row limit. Anything after that
- *                            is cut off until the next message starts to avoid
- *                            accidental overlap.
+ *   MessageRows 6
+ *   - Changes the Message Rows displayed to 6. If you are using continuous
+ *   Show Text events, this will continue displaying the following lines's
+ *   texts until it hits the row limit. Anything after that is cut off until
+ *   the next message starts to avoid accidental overlap.
  *
- *   MessageWidth 400       = Changes the Message Window Width to 400 pixels.
- *                            This will cut off any words that are shown too
- *                            far to the right so adjust accordingly!
+ *   MessageWidth 400
+ *   - Changes the Message Window Width to 400 pixels. This will cut off any
+ *   words that are shown too far to the right so adjust accordingly!
  *
- *   EnableWordWrap         = Enables wordwrapping. If a word extends past the
- *                            window size, it will automatically move onto the
- *                            next line. Keep in mind, you will need to use
- *                            \br to perform line breaks.
+ *   EnableWordWrap
+ *   - Enables wordwrapping. If a word extends past the window size, it will
+ *   automatically move onto the next line. Keep in mind, you will need to use
+ *   \br to perform line breaks.
  *
- *   DisableWordWrap        = This disables wordwrapping. Line breaks will be
- *                            automatic at points where a new line is started
- *                            in the editor.
+ *   DisableWordWrap
+ *   - This disables wordwrapping. Line breaks will be automatic at points
+ *   where a new line is started in the editor.
+ *
+ *   EnableFastForward
+ *   - Enables Fast Forward key from working with messages.
+ *
+ *   DisableFastForward
+ *   - Disables Fast Forward key from working with messages.
  *
  * ============================================================================
  * Changelog
  * ============================================================================
+ *
+ * Version 1.10:
+ * - Updated the Message Row system for Extended Message Pack 1's Autosizing
+ * feature to work with extended heights.
+ *
+ * Version 1.09:
+ * - Replaced 'Fast Forward' parameter with the 'Fast Forward Key' parameter
+ * and 'Enable Fast Forward' parameter. Two new Plugin Commands are added. They
+ * are 'EnableFastForward' and 'DisableFastForward' for control over when fast
+ * forwarding is allowed as to not cause timed cutscenes to desynch.
+ *
+ * Version 1.08:
+ * - Fixed a bug regarding Input Number positioning when the Message Window's
+ * position was middle.
+ *
+ * Version 1.07:
+ * - Added 'Word Wrap Space' for word wrap users. This parameter will leave a
+ * space behind for those who want a space left behind.
+ *
+ * Version 1.06:
+ * - Fixed a bug that would cause masking problems with mobile devices.
+ *
+ * Version 1.05:
+ * - Fixed a bug that would cause the namebox window to appear distorted.
+ *
+ * Version 1.04:
+ * - Fixed a bug that captured too many text codes with the namebox window.
+ * - Timed Name Window's closing speed with main window's closing speed.
+ *
+ * Verison 1.03:
+ * - Fixed a bug with textcodes that messed up wordwrapping.
+ * - Fixed a bug with font reset, italic, and bold textcodes.
  *
  * Version 1.02:
  * - Namebox Window's overlap feature that's in every MV window is now disabled
@@ -289,281 +335,6 @@ Yanfly.Message = Yanfly.Message || {};
  * Version 1.00:
  * - Finished plugin!
  */
- /*:ja
- * @plugindesc メッセージの表示方法や機能をカスタマイズすることができます。
- * @author Yanfly Engine Plugins
- *
- * @param ---一般---
- * @default
- *
- * @param Default Rows
- * @desc メッセージボックスに表示されるデフォルトの行数を指定します。
- * Default: 4
- * @default 4
- *
- * @param Default Width
- * @desc メッセージボックスの幅をピクセルで指定します。
- * Default: Graphics.boxWidth
- * @default Graphics.boxWidth
- *
- * @param Face Indent
- * @desc 顔グラフィックを使っている時の、テキストインデント値を指定します。
- * Default: Window_Base._faceWidth + 24
- * @default Window_Base._faceWidth + 24
- *
- * @param Fast Forward
- * @desc 早送りボタンを導入することができます。不要な場合は 'false' を記入してください。
- * @default Input.isPressed('pagedown')
- *
- * @param Word Wrapping
- * @desc ワードラップ機能の ON/OFF を決定します。
- * OFF - false     ON - true
- * @default false
- *
- * @param Description Wrap
- * @desc 詳細の欄でのワードラップ機能の ON/OFF を決定します。
- * OFF - false     ON - true
- * @default false
- *
- * @param ---フォント---
- * @default
- *
- * @param Font Name
- * @desc メッセージウィンドウに使われるデフォルトのフォントを指定します。
- * Default: GameFont
- * @default GameFont
- *
- * @param Font Size
- * @desc メッセージウィンドウに使われるデフォルトのフォントサイズを指定します。
- * Default: 28
- * @default 28
- *
- * @param Font Size Change
- * @desc \{ と \} が使われた際、このフォントサイズを適用します。
- * Default: 12
- * @default 12
- *
- * @param Font Changed Max
- * @desc \{ によって生じるフォントの最大サイズを指定します。
- * Default: 96
- * @default 96
- *
- * @param Font Changed Min
- * @desc \{ によって生じるフォントの最小サイズを指定します。
- * Default: 12
- * @default 12
- *
- * @param ---Name Box---
- * @default
- *
- * @param Name Box Buffer X
- * @desc ネームボックスのバッファを指定します　(x軸)
- * @default -28
- *
- * @param Name Box Buffer Y
- * @desc ネームボックスのバッファを指定します　(y軸)
- * @default 0
- *
- * @param Name Box Padding
- * @desc ネームボックスのパディング値を指定します。
- * @default this.standardPadding() * 4
- *
- * @param Name Box Color
- * @desc ネームボックスに使われるテキスト色を指定します。
- * @default 0
- *
- * @param Name Box Clear
- * @desc ネームボックスを空欄にしますか？
- * NO - false     YES - true
- * @default false
- *
- * @param Name Box Added Text
- * @desc ネームボックスが使われる際には必ずこのテキストが追加されます。自動的にカラー設定をしたい場合などに使われます。
- * @default \c[6]
- *
- * @help
- * ============================================================================
- * Introduction
- * ============================================================================
- *
- * RPGツクールMVではメッセージシステムが強化されましたが、このプラグインを使えば
- * 更にアイテム・武器・防具・衣装の名前や、アイコンのテキストコードの
- * 変換を容易に行なうことができます。
- * 
- * またこのスクリプトでは、ゲーム中にメッセージウィンドウのサイズを最適化したり、
- * セパレートフォントや、テキストの早送り機能を提供します。
- * 
- * ============================================================================
- * Word Wrapping
- * ============================================================================
- *
- * ワードラップ機能は、メッセージシステム上で使うことができます。
- * プラグインコマンドを用いて、有効/無効の切り替えを行ってください。
- * ワードラップを使うことで、メッセージウィンドウ外へはみ出た文章を、自動的に
- * 次の行に折り返します。この際、エディターの改行入力は無効化され、プラグイン
- * による改行が優先されます。
- * 
- * <br>もしくは<line break>というテキストコードを使って、改行を行います。
- * 新しい行を始めたい部分の前、もしくは後にこのコードを入力してください。
- *
- * ワードラップ機能は、メッセージウィンドウ向けの機能ですが、
- * アイテム詳細など、それ以外の部分にもこの機能を用いたい場合、
- * そのテキストの先頭に<WordWrap>と挿入すれば、利用することができます。
- *
- * ============================================================================
- * Text Codes
- * ============================================================================
- *
- * メッセージ内で特定のテキストコードを使うことで、下記のような置き換えを
- * 行うことができます。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- * Text Code   Function
- *   \V[n]       n 番目の変数の値と置き換えられます。
- *   \N[n]       n 番目のアクター名と置き換えられます。
- *   \P[n]       n 番目のパーティメンバー名と置き換えられます。
- *   \G          通貨単位と置き換えられます。
- *   \C[n]       続くテキストを、n 番目のカラーで表示します。
- *   \I[n]       n 番目のアイコンを表示します。
- *   \{          テキストサイズを一段階大きくします。
- *   \}          テキストサイズを一段階小さくします。
- *   \\          \のキャラクターと置き換えられます。
- *   \$          所持金ウィンドウを開きます。
- *   \.          1/4 秒の間をあけます。
- *   \|          1 秒の間をあけます。
- *   \!          ボタンインプットを待ちます。
- *   \>          同じラインの残りのテキストを一気に表示します。
- *   \<          上記のエフェクトをキャンセルします。
- *   \^          テキスト表示後にインプットを待たなくなります。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Wait:       Effect:
- *    \w[x]     -  x フレーム分の間をあけます (60フレーム = 1秒) 
- *                 メッセージウィンドウ限定の機能です。 
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  NameWindow: Effect:
- *    \n<x>     - 左揃えで x の文字列でネームボックスを作成します。 *注
- *    \nc<x>    - 中央揃えで x の文字列でネームボックスを作成します。 *注
- *    \nr<x>    - 右揃えで x の文字列でネームボックスを作成します。 *注
- *
- *              *注 : メッセージウィンドウのみに有効
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Line Break  Effect:
- *    <br>      - ワードラップモードで改行を行います。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Position:   Effect:
- *    \px[x]    - テキストのx方向の位置を指定します。
- *    \py[x]    - テキストのy方向の位置を指定します。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Outline:    Effect:
- *   \oc[x]    - アウトラインの色を x にします。
- *   \ow[x]    - アウトラインの幅を x にします。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Font:       Effect:
- *    \fr       - 全てのフォント変更をリセットします。
- *    \fs[x]    - フォントサイズを x に変更します。
- *    \fn<x>    - フォント名を x に変更します。
- *    \fb       - ボールド設定を切り替えます。
- *    \fi       - イタリック設定を切り替えます。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Actor:      Effect:
- *    \af[x]    - アクター x の顔を表示します。(注)
- *    \ac[x]    - アクターの職業名を表示します。
- *    \an[x]    - アクターのニックネームを表示します。
- *
- *              注 : メッセージウィンドウのみで有効
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Party:      Effect:
- *    \pf[x]    - パーティメンバー x の顔を表示します。(注)
- *    \pc[x]    - パーティメンバー x の職業名を表示します。
- *    \pn[x]    - パーティメンバー x のニックネームを表示します。
- *
- *              注 : メッセージウィンドウのみで有効
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Names:      Effect:
- *    \nc[x]    - 職業 x の名前を表示します。
- *    \ni[x]    - アイテム x の名前を表示します。
- *    \nw[x]    - 武器 x の名前を表示します。
- *    \na[x]    - 防具 x の名前を表示します。
- *    \ns[x]    - スキル x の名前を表示します。
- *    \nt[x]    - ステート x の名前を表示します。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- *  Icon Names: Effect:
- *    \ii[x]    - アイテム x の名前とアイコンを表示します。
- *    \iw[x]    - 武器 x の名前とアイコンを表示します。
- *    \ia[x]    - 防具 x の名前とアイコンを表示します。
- *    \is[x]    - スキル x の名前とアイコンを表示します。
- *    \it[x]    - ステート x の名前とアイコンを表示します。
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
- * これらはスクリプトと共に加えられたテキストコードです。これらのコードは、
- * メッセージウィンドウにのみ働くものであることに気を付けてください。またそれ
- * 以外にも、ヘルプの詳細、アクタープロフィールなどにも有効です。
- *
- * ============================================================================
- * Plugin Commands
- * ============================================================================
- *
- * イベントエディタを通して下記のプラグインコマンドを用いることで、メッセージ
- * システムの様々な要素を変更することができます。
- *
- * プラグインコマンド
- *   MessageRows 6          = 表示されるメッセージの列を6にします。もし
- *                            ［文章の表示］を継続的に使っている場合、行の
- *                            リミットに到達するまで、あとに続く文章を表示し
- *                            続けます。それ以降の文章については、重複回避
- *                            のためにカットされます。
- *
- *   MessageWidth 400       = メッセージウィンドウの幅を400ピクセルに変更します。
- *                            右側に寄りすぎている文字は、適宜カットされ調整が
- *                            行われます。
- *
- *   EnableWordWrap         = ワードラップを有効にします。文がウィンドウサイズ
- *                            を超えてしまった時に、自動的に次の行に進みます
- *                            改行する際は '\br'を挿入してください。
- *
- *   DisableWordWrap        = ワードラップを無効にします。エディタ内で新しい文
- *                            が始まった地点で、自動的に改行されます。
- *
- * ============================================================================
- * Changelog
- * ============================================================================
- *
- * Version 1.02:
- * - Namebox Window's overlap feature that's in every MV window is now disabled
- * to allow for overlapping with main message window.
- * - Updated window positioning for Branch Choices, Number Input, and Item
- * Selection windows.
- *
- * Version 1.01:
- * - Added 'Description Wrap' into the parameters to allow for all item
- * descriptions to be automatically processed with word wrapping.
- *
- * Version 1.00:
- * - Finished plugin!
- */
- 
 //=============================================================================
 
 //=============================================================================
@@ -576,14 +347,18 @@ Yanfly.Param = Yanfly.Param || {};
 Yanfly.Param.MSGDefaultRows = String(Yanfly.Parameters['Default Rows']);
 Yanfly.Param.MSGDefaultWidth = String(Yanfly.Parameters['Default Width']);
 Yanfly.Param.MSGFaceIndent = String(Yanfly.Parameters['Face Indent']);
-Yanfly.Param.MSGFastForward = String(Yanfly.Parameters['Fast Forward']);
+Yanfly.Param.MSGFastForwardKey = String(Yanfly.Parameters['Fast Forward Key']);
+Yanfly.Param.MSGFFOn = eval(String(Yanfly.Parameters['Enable Fast Forward']));
 Yanfly.Param.MSGWordWrap = String(Yanfly.Parameters['Word Wrapping']);
 Yanfly.Param.MSGDescWrap = String(Yanfly.Parameters['Description Wrap']);
+Yanfly.Param.MSGWrapSpace = eval(String(Yanfly.Parameters['Word Wrap Space']));
+
 Yanfly.Param.MSGFontName = String(Yanfly.Parameters['Font Name']);
 Yanfly.Param.MSGFontSize = Number(Yanfly.Parameters['Font Size']);
 Yanfly.Param.MSGFontSizeChange = String(Yanfly.Parameters['Font Size Change']);
 Yanfly.Param.MSGFontChangeMax = String(Yanfly.Parameters['Font Changed Max']);
 Yanfly.Param.MSGFontChangeMin = String(Yanfly.Parameters['Font Changed Min']);
+
 Yanfly.Param.MSGNameBoxBufferX = String(Yanfly.Parameters['Name Box Buffer X']);
 Yanfly.Param.MSGNameBoxBufferY = String(Yanfly.Parameters['Name Box Buffer Y']);
 Yanfly.Param.MSGNameBoxPadding = String(Yanfly.Parameters['Name Box Padding']);
@@ -619,11 +394,12 @@ Game_System.prototype.initialize = function() {
 
 Game_System.prototype.initMessageSystem = function() {
 		this._wordWrap = eval(Yanfly.Param.MSGWordWrap);
+    this._fastForward = Yanfly.Param.MSGFFOn;
 };
 
 Game_System.prototype.messageRows = function() {
 		var rows = eval(this._messageRows) || eval(Yanfly.Param.MSGDefaultRows);
-		return Math.max(1, parseInt(rows));
+		return Math.max(1, Number(rows));
 };
 
 Game_System.prototype.messageWidth = function() {
@@ -638,6 +414,16 @@ Game_System.prototype.wordWrap = function() {
 Game_System.prototype.setWordWrap = function(state) {
 		if (this._wordWrap === undefined) this.initMessageSystem();
 		this._wordWrap = state;
+};
+
+Game_System.prototype.isFastFowardEnabled = function() {
+    if (this._fastForward === undefined) this.initMessageSystem();
+    return this._fastForward;
+};
+
+Game_System.prototype.setFastFoward = function(state) {
+    if (this._fastForward === undefined) this.initMessageSystem();
+    this._fastForward = state;
 };
 
 //=============================================================================
@@ -661,6 +447,8 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
 		if (command === 'MessageWidth') $gameSystem._messageWidth = args[0];
 		if (command === 'EnableWordWrap') $gameSystem.setWordWrap(true);
 		if (command === 'DisableWordWrap') $gameSystem.setWordWrap(false);
+    if (command === 'EnableFastForward') $gameSystem.setFastFoward(true);
+    if (command === 'DisableFastForward') $gameSystem.setFastFoward(false);
 };
 
 Game_Interpreter.prototype.command101 = function() {
@@ -737,13 +525,18 @@ Window_Base.prototype.setWordWrap = function(text) {
 			text = text.replace(/<(?:WordWrap)>/gi, '\n');
 		}
 		if (this._wordWrap) {
-			text = text.replace(/[\n\r]+/g, '');
-			text = text.replace(/<(?:BR|line break)>/gi, '\n');
+      var replace = Yanfly.Param.MSGWrapSpace ? ' ' : '';
+			text = text.replace(/[\n\r]+/g, replace);
 		}
+    text = text.replace(/<(?:BR|line break)>/gi, '\n');
 		return text;
 };
 
 Window_Base.prototype.convertExtraEscapeCharacters = function(text) {
+		// Font Codes
+		text = text.replace(/\x1bFR/gi, '\x1bMSGCORE[0]');
+		text = text.replace(/\x1bFB/gi, '\x1bMSGCORE[1]');
+		text = text.replace(/\x1bFI/gi, '\x1bMSGCORE[2]');
 		// \AC[n]
 		text = text.replace(/\x1bAC\[(\d+)\]/gi, function() {
 				return this.actorClassName(parseInt(arguments[1]));
@@ -837,7 +630,7 @@ Window_Base.prototype.escapeIconItem = function(n, database) {
 };
 
 Window_Base.prototype.obtainEscapeString = function(textState) {
-    var arr = /^\<(.*)\>/.exec(textState.text.slice(textState.index));
+    var arr = /^\<(.*?)\>/.exec(textState.text.slice(textState.index));
     if (arr) {
         textState.index += arr[0].length;
         return String(arr[0].slice(1, arr[0].length - 1));
@@ -850,9 +643,12 @@ Yanfly.Message.Window_Base_processEscapeCharacter =
 		Window_Base.prototype.processEscapeCharacter;
 Window_Base.prototype.processEscapeCharacter = function(code, textState) {
 		switch (code) {
-		case 'FR':
-        this.resetFontSettings();
-        break;
+		case 'MSGCORE':
+				var id = this.obtainEscapeParam(textState);
+				if (id === 0) this.resetFontSettings();
+				if (id === 1) this.contents.fontBold = !this.contents.fontBold;
+				if (id === 2) this.contents.fontItalic = !this.contents.fontItalic;
+				break;
 		case 'FS':
         this.contents.fontSize = this.obtainEscapeParam(textState);
         break;
@@ -860,12 +656,6 @@ Window_Base.prototype.processEscapeCharacter = function(code, textState) {
 				var name = this.obtainEscapeString(textState);
 				this.contents.fontFace = name;
         break;
-		case 'FB':
-				this.contents.fontBold = !this.contents.fontBold;
-				break;
-		case 'FI':
-				this.contents.fontItalic = !this.contents.fontItalic;
-				break;
 		case 'OC':
 				var id = this.obtainEscapeParam(textState);
         this.contents.outlineColor = this.textColor(id);
@@ -878,7 +668,6 @@ Window_Base.prototype.processEscapeCharacter = function(code, textState) {
         break;
     case 'PY':
         textState.y = this.obtainEscapeParam(textState);
-        break;
         break;
 		default:
       Yanfly.Message.Window_Base_processEscapeCharacter.call(this,
@@ -913,7 +702,7 @@ Window_Base.prototype.checkWordWrap = function(textState) {
 			if (nextSpace < 0) nextSpace = textState.text.length + 1;
 			if (nextBreak > 0) nextSpace = Math.min(nextSpace, nextBreak);
 			var word = textState.text.substring(textState.index, nextSpace);
-			var size = this.textWidth(word);
+			var size = this.textWidthExCheck(word);
 		}
 		return (size + textState.x > this.contents.width);
 };
@@ -1006,6 +795,7 @@ Yanfly.Message.Window_NumberInput_updatePlacement =
 		Window_NumberInput.prototype.updatePlacement;
 Window_NumberInput.prototype.updatePlacement = function() {
     Yanfly.Message.Window_NumberInput_updatePlacement.call(this);
+    var messageY = this._messageWindow.y;
 		var messagePosType = $gameMessage.positionType();
 		if (messagePosType === 0) {
 			this.y = this._messageWindow.height;
@@ -1063,7 +853,6 @@ Window_NameBox.prototype.constructor = Window_NameBox;
 
 Window_NameBox.prototype.initialize = function(parentWindow) {
     this._parentWindow = parentWindow;
-		this._ignoreMask = true
     Window_Base.prototype.initialize.call(this, 0, 0, 240, this.windowHeight());
 		this._text = '';
 		this._openness = 0;
@@ -1073,20 +862,15 @@ Window_NameBox.prototype.initialize = function(parentWindow) {
 			this.backOpacity = 0;
 			this.opacity = 0;
 		}
-};
-
-Yanfly.Message.WindowLayer_webglMaskWindow =
-		WindowLayer.prototype._webglMaskWindow;
-WindowLayer.prototype._webglMaskWindow = function(renderSession, win) {
-    if (win._ignoreMask) return;
-    Yanfly.Message.WindowLayer_webglMaskWindow.call(this, renderSession, win);
+		this.hide();
 };
 
 Window_NameBox.prototype.windowWidth = function() {
 		this.resetFontSettings();
     var dw = this.textWidthEx(this._text);
 		dw += this.padding * 2;
-		return dw + eval(Yanfly.Param.MSGNameBoxPadding);
+		var width = dw + eval(Yanfly.Param.MSGNameBoxPadding)
+		return Math.ceil(width);
 };
 
 Window_NameBox.prototype.textWidthEx = function(text) {
@@ -1115,10 +899,14 @@ Window_NameBox.prototype.update = function() {
 		if (this.isClosed()) return;
 		if (this.isClosing()) return;
 		if (this._closeCounter-- > 0) return;
+		if (this._parentWindow.isClosing()) {
+			this._openness = this._parentWindow.openness;
+		}
 		this.close();
 };
 
 Window_NameBox.prototype.refresh = function(text, position) {
+		this.show();
 		this._text = Yanfly.Param.MSGNameBoxText + text;
 		this._position = position;
 		this.width = this.windowWidth();
@@ -1177,19 +965,14 @@ Window_NameBox.prototype.adjustPositionY = function() {
 // Window_Message
 //=============================================================================
 
-Yanfly.Message.Window_Message_subWindows = Window_Message.prototype.subWindows;
-Window_Message.prototype.subWindows = function() {
-    var subWindows = Yanfly.Message.Window_Message_subWindows.call(this);
-		subWindows = subWindows.concat([this._nameWindow]);
-		return subWindows;
-};
-
 Yanfly.Message.Window_Message_createSubWindows =
 		Window_Message.prototype.createSubWindows;
 Window_Message.prototype.createSubWindows = function() {
     Yanfly.Message.Window_Message_createSubWindows.call(this);
 		this._nameWindow = new Window_NameBox(this);
 		Yanfly.nameWindow = this._nameWindow;
+		var scene = SceneManager._scene;
+		scene.addChild(this._nameWindow);
 };
 
 Window_Message.prototype.numVisibleRows = function() {
@@ -1248,7 +1031,8 @@ Window_Message.prototype.newLineX = function() {
 };
 
 Window_Message.prototype.isFastForward = function() {
-		return eval(Yanfly.Param.MSGFastForward);
+    if (!$gameSystem.isFastFowardEnabled()) return false;
+		return Input.isPressed(Yanfly.Param.MSGFastForwardKey);
 };
 
 Yanfly.Message.Window_Message_updateInput =
@@ -1300,28 +1084,28 @@ Window_Message.prototype.convertEscapeCharacters = function(text) {
 };
 
 Window_Message.prototype.convertNameBox = function(text) {
-		text = text.replace(/\x1bN\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bN\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 1);
 		}, this);
-		text = text.replace(/\x1bN1\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bN1\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 1);
 		}, this);
-		text = text.replace(/\x1bN2\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bN2\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 2);
 		}, this);
-		text = text.replace(/\x1bN3\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bN3\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 3);
 		}, this);
-		text = text.replace(/\x1bNC\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bNC\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 3);
 		}, this);
-		text = text.replace(/\x1bN4\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bN4\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 4);
 		}, this);
-		text = text.replace(/\x1bN5\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bN5\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 5);
 		}, this);
-		text = text.replace(/\x1bNR\<(.*)\>/gi, function() {
+		text = text.replace(/\x1bNR\<(.*?)\>/gi, function() {
 				return Yanfly.nameWindow.refresh(arguments[1], 5);
 		}, this);
     return text;
@@ -1329,11 +1113,11 @@ Window_Message.prototype.convertNameBox = function(text) {
 
 Window_Message.prototype.convertMessageCharacters = function(text) {
 		text = text.replace(/\x1bAF\[(\d+)\]/gi, function() {
-				var i = parseInt(arguments[1])
+				var i = parseInt(arguments[1]);
 				return this.convertActorFace($gameActors.actor(i));
 		}.bind(this));
 		text = text.replace(/\x1bPF\[(\d+)\]/gi, function() {
-				var i = parseInt(arguments[1])
+				var i = parseInt(arguments[1]);
 				return this.convertActorFace($gameParty.members()[i - 1]);
 		}.bind(this));
     return text;

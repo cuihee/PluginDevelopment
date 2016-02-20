@@ -199,11 +199,6 @@ function Game_Chronus() {
     'use strict';
     var pluginName = 'Chronus';
 
-    //=============================================================================
-    // PluginManager
-    //  多言語とnullに対応したパラメータの取得を行います。
-    //  このコードは自動生成され、全てのプラグインで同じものが使用されます。
-    //=============================================================================
     var getParamString = function(paramNames) {
         var value = getParamOther(paramNames);
         return value == null ? '' : value;
@@ -223,6 +218,10 @@ function Game_Chronus() {
             if (name) return name;
         }
         return null;
+    };
+
+    var isParamExist = function(paramNames) {
+        return getParamOther(paramNames) != null;
     };
 
     var getParamArrayString = function (paramNames) {
@@ -533,7 +532,7 @@ function Game_Chronus() {
 
     //=============================================================================
     // Sprite_Chronicle_Clock
-    //  ゲーム内時間情報を描画するウィンドウです。
+    //  アナログ時計表示スプライトクラスです。
     //=============================================================================
     function Sprite_Chronicle_Clock() {
         this.initialize.apply(this, arguments);
@@ -607,8 +606,7 @@ function Game_Chronus() {
     };
 
     Spriteset_Map.prototype.createClockSprite = function() {
-        var fileName = ImageManager.loadPicture(getParamString('文字盤画像ファイル'));
-        this._clockSprite = fileName ? new Sprite_Chronicle_Clock() : new Sprite_Abstract();
+        this._clockSprite = isParamExist('文字盤画像ファイル') ? new Sprite_Chronicle_Clock() : new Sprite_Abstract();
         this.addChild(this._clockSprite);
     };
 
