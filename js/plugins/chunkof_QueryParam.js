@@ -4,13 +4,10 @@
 (function() {
 
   //--------------------
-  var _DataManager_setupNewGame = DataManager.setupNewGame;
-  DataManager.setupNewGame = function(){
+  var _Scene_Boot_start = Scene_Boot.prototype.start;
+  Scene_Boot.prototype.start = function() {
+    _Scene_Boot_start.apply(this, arguments);
     // start
-    var startMapId = getQueryVariable('map');
-    if (startMapId) {
-      $dataSystem.startMapId = Number(startMapId);
-    }
     var startX = getQueryVariable('x');
     if (startX) {
       $dataSystem.startX = Number(startX);
@@ -19,8 +16,12 @@
     if (startY) {
       $dataSystem.startY = Number(startY);
     }
-
-    _DataManager_setupNewGame.call(this);
+    var startMapId = getQueryVariable('map');
+    if (startMapId) {
+      $dataSystem.startMapId = Number(startMapId);
+      DataManager.setupNewGame();
+      SceneManager.goto(Scene_Map);
+    }
   };
 
 
