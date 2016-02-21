@@ -148,6 +148,14 @@
         return window ? window.convertEscapeCharacters(text) : text;
     };
 
+    var checkTypeNumber = function(value) {
+        return checkType(value, 'Number');
+    };
+
+    var checkType = function(value, typeName) {
+        return Object.prototype.toString.call(value).slice(8, -1) === typeName;
+    };
+
     //=============================================================================
     // Object
     //  プロパティの定義

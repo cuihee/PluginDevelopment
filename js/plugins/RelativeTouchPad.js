@@ -58,6 +58,7 @@
  */
 (function () {
     var pluginName = 'RelativeTouchPad';
+
     var getParamString = function(paramNames) {
         var value = getParamOther(paramNames);
         return value == null ? '' : value;
@@ -202,7 +203,7 @@
     Game_Player.prototype.updateDashing = function() {
         _Game_Player_updateDashing.apply(this, arguments);
         if (this.getMovePad().isActive()) {
-            this._dashing = this.getMovePad().isDistanceFar();
+            this._dashing = this.getMovePad().isDistanceFar() || ConfigManager.alwaysDash;
         }
     };
 
@@ -478,7 +479,7 @@
             var scale                  = this.getMovePad().getDistance() / this._arrowDiagonal;
             this._arrowSprite.scale.x = scale;
             this._arrowSprite.scale.y = scale;
-            this._arrowSprite.opacity = Math.min(255, 255 / scale);
+            this._arrowSprite.opacity = Math.min(255, 255 / (scale / 1.5));
         }
     };
 
