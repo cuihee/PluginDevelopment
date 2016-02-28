@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.3.2 2016/02/28 処理の負荷を少し軽減
+// 1.3.1 2016/02/21 トリガーにマウスを押したまま移動を追加
 // 1.3.0 2016/01/24 ピクチャをなでなでする機能を追加
 //                  トリガーにマウスムーブを追加
 //                  ピクチャが回転しているときに正しく位置を補足できるよう修正
@@ -73,7 +75,8 @@
  *      8  : クリックしている間ずっと
  *      9  : ホイールクリックした場合（PCの場合のみ有効）
  *      10 : ダブルクリックした場合
- *      11 : マウスを移動した場合
+ *      11 : マウスをピクチャ内で移動した場合
+ *      12 : マウスを押しつつピクチャ内で移動した場合
  *
  *  例：P_CALL_CE 1 3 7
  *  　：ピクチャのボタン化 \v[1] \v[2] \v[3]
@@ -161,6 +164,7 @@
  *      9  : Wheel click
  *      10 : Double click
  *      11 : Mouse move
+ *      12 : Mouse move and press
  *
  *  P_CALL_CE_REMOVE [Picture number] :
  *      break relation from picture to common event.
@@ -231,7 +235,7 @@
             case 'ピクチャのボタン化':
                 pictureId = getArgNumber(args[0], 1, $gameScreen.maxPictures());
                 commonId  = getArgNumber(args[1], 1, $dataCommonEvents.length - 1);
-                trigger   = getArgNumber(args[2], 1, 11);
+                trigger   = getArgNumber(args[2], 1, 12);
                 $gameScreen.setPictureCallCommon(pictureId, commonId, trigger);
                 break;
             case 'P_CALL_CE_REMOVE' :
@@ -354,8 +358,8 @@
             0, $dataSystem.variables.length);
         var paramTouchY = getParamNumber(['GameVariableTouchY', 'ポインタY座標の変数番号'],
             0, $dataSystem.variables.length);
-        if (paramTouchX > 0) $gameVariables.setValue(paramTouchX, TouchInput.x);
-        if (paramTouchY > 0) $gameVariables.setValue(paramTouchY, TouchInput.y);
+        if (paramTouchX > 0) $gameVariables._data[paramTouchX] = TouchInput.x;
+        if (paramTouchY > 0) $gameVariables._data[paramTouchY] = TouchInput.y;
     };
 
     Game_Screen.prototype.setPictureCallCommon = function(pictureId, commonId, trigger) {
@@ -481,6 +485,7 @@
         this._triggerHandler[9]        = this.isWheelTriggered;
         this._triggerHandler[10]       = this.isDoubleTriggered;
         this._triggerHandler[11]       = this.isMoved;
+        this._triggerHandler[12]       = this.isMovedAndPressed;
         this._onMouse                  = false;
         this._outMouse                 = false;
         this._wasOnMouse               = false;
@@ -635,6 +640,10 @@
 
     Sprite_Picture.prototype.isMoved = function() {
         return this.isTouchEvent(TouchInput.isMoved);
+    };
+
+    Sprite_Picture.prototype.isMovedAndPressed = function() {
+        return this.isTouchEvent(TouchInput.isMoved) && TouchInput.isPressed();
     };
 
     Sprite_Picture.prototype.isWheelTriggered = function() {
