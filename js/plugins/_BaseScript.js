@@ -152,8 +152,16 @@
         return checkType(value, 'Number');
     };
 
+    var checkTypeFunction = function(value) {
+        return checkType(value, 'Function');
+    };
+
     var checkType = function(value, typeName) {
         return Object.prototype.toString.call(value).slice(8, -1) === typeName;
+    };
+
+    var getClassName = function(object) {
+        return object.constructor.toString().replace(/function\s+(.*)\s*\([\s\S]*/m, '$1');
     };
 
     //=============================================================================

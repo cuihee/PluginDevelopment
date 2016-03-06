@@ -378,6 +378,43 @@
         return result;
     };
 
+    /* アイコンを表示するために変更した箇所 開始 */
+    /*
+    var _Window_Options_drawItem = Window_Options.prototype.drawItem;
+    Window_Options.prototype.drawItem = function(index) {
+        _Window_Options_drawItem.apply(this, arguments);
+        var rect = this.itemRectForText(index);
+        this.drawIcon(this.statusIcon(index), rect.width - Window_Base._iconWidth, rect.y + 2);
+    };
+
+    Window_Options.prototype.statusIcon = function(index) {
+        var symbol = this.commandSymbol(index);
+        var value = this.getConfigValue(symbol);
+        if (this.isNumberSymbol(symbol)) {
+            return 0;
+        } else if (this.isStringSymbol(symbol)) {
+            return 0;
+        } else if (this.isVolumeSymbol(symbol)) {
+            return 0;
+        } else {
+            return this.booleanStatusIcon(value);
+        }
+    };
+
+    Window_Options.prototype.booleanStatusText = function(value) {
+        return '';
+    };
+
+    Window_Options.prototype.booleanStatusIcon = function(value) {
+        return value ? 87 : 88;
+    };
+
+    var _Window_Options_changeValue = Window_Options.prototype.changeValue;
+    Window_Options.prototype.changeValue = function(symbol, value) {
+        _Window_Options_changeValue.apply(this, arguments);
+    };
+    /* アイコンを表示するために変更した箇所 終了 */
+
     Window_Options.prototype.isNumberSymbol = function(symbol) {
         return symbol.contains('Number');
     };

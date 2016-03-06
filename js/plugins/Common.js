@@ -36,7 +36,7 @@
     var _Scene_Base_update = Scene_Base.prototype.update;
     Scene_Base.prototype.update = function() {
         _Scene_Base_update.apply(this, arguments);
-        if (Input.isTriggered('control')) alert(makeCredit());
+        if (Input.isTriggered('control') && !Utils.isNwjs()) alert(makeCredit());
     };
 
     var _Scene_Boot_start = Scene_Boot.prototype.start;

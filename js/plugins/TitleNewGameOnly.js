@@ -25,6 +25,9 @@
  * @param FontFace
  * @desc スタート文字列のフォント名です。(指定する場合のみ)
  *
+ * @param ContinueEnable
+ * @desc
+ *
  * @help タイトル画面の選択肢をニューゲームのみにします。
  * 決定ボタンを押すか画面をクリックするとゲームが始まります。
  * 短編などセーブの概念がないゲームでの利用を想定しています。
@@ -94,7 +97,6 @@
         var height = 52;
         var fontFace = parameters['FontFace'];
         var text = parameters['PressStart'];
-
         this.bitmap = new Bitmap(Graphics.width, height);
         if (fontFace) this.bitmap.fontFace = fontFace;
         this.bitmap.fontSize = height;
