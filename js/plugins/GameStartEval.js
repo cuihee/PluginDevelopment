@@ -74,7 +74,6 @@
         while (script && i < 100) {
             script = getParamString('スクリプト' + String(++i));
             try {
-                alert(script);
                 if (script) eval(script);
             } catch (e) {
                 if (Utils.isNwjs()) {

@@ -26,6 +26,7 @@
  * @default Full Screen
  *
  * @help Add option start up full screen.
+ * This plugin is using only local execute.
  *
  * This plugin is released under the MIT License.
  */
@@ -45,9 +46,9 @@
  *
  * @help オプション画面に「フルスクリーンで起動」を追加します。
  * 有効な場合、ゲームをフルスクリーンで起動します。
- *
  * またタイトル画面にシャットダウンを追加します。
- * シャットダウンはローカル環境で実行した場合のみ出現します。
+ *
+ * このプラグインはローカル環境で実行した場合のみ有効です。
  *
  * このプラグインにはプラグインコマンドはありません。
  *
@@ -63,6 +64,11 @@ function Scene_Terminate() {
 
 (function () {
     'use strict';
+    // Nw.js環境下以外では一切の機能を無効
+    if (!Utils.isNwjs()) {
+        return;
+    }
+
     var pluginName = 'StartUpFullScreen';
 
     var getParamString = function(paramNames) {
@@ -109,8 +115,7 @@ function Scene_Terminate() {
     var _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
     Scene_Title.prototype.createCommandWindow = function() {
         _Scene_Title_createCommandWindow.call(this);
-        if (paramShutdown && Utils.isNwjs())
-            this._commandWindow.setHandler('shutdown',  this.commandShutdown.bind(this));
+        if (paramShutdown) this._commandWindow.setHandler('shutdown',  this.commandShutdown.bind(this));
     };
 
     Scene_Title.prototype.commandShutdown = function() {
@@ -126,13 +131,13 @@ function Scene_Terminate() {
     var _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
     Window_TitleCommand.prototype.makeCommandList = function() {
         _Window_TitleCommand_makeCommandList.call(this);
-        if (paramShutdown && Utils.isNwjs()) this.addCommand(paramShutdown, 'shutdown');
+        if (paramShutdown) this.addCommand(paramShutdown, 'shutdown');
     };
 
     var _Window_TitleCommand_updatePlacement = Window_TitleCommand.prototype.updatePlacement;
     Window_TitleCommand.prototype.updatePlacement = function() {
         _Window_TitleCommand_updatePlacement.call(this);
-        if (paramShutdown && Utils.isNwjs()) this.y += this.height / 8;
+        if (paramShutdown) this.y += this.height / 8;
     };
 
     //=============================================================================
