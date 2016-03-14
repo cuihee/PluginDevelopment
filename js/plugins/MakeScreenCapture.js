@@ -292,7 +292,12 @@
         if (WindowLayer.captureExecute) arguments[2] = Graphics.boxHeight - (y + h);
         _WindowLayer__webglMaskRect.apply(this, arguments);
     };
-
+/*
+    var _Graphics_isWebGL = Graphics.isWebGL;
+    Graphics.isWebGL = function() {
+        return !WindowLayer.captureExecute && _Graphics_isWebGL.apply(this, arguments);
+    };
+*/
     //=============================================================================
     // Bitmap
     //  対象のビットマップを保存します。現状、ローカル環境下でのみ動作します。
