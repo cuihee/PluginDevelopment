@@ -30,7 +30,7 @@ var $plugins =
 {"name":"StartUpFullScreen","status":true,"description":"フルスクリーンで起動プラグイン","parameters":{"シャットダウン":"シャットダウン","フルスクリーンで起動":"フルスクリーンで起動"}},
 {"name":"CommandIcon","status":true,"description":"アイコン付きコマンドプラグイン","parameters":{}},
 {"name":"FloatingCharacter","status":true,"description":"キャラクターの浮遊プラグイン","parameters":{"通行可能地形タグ":"1,2,3","通行可能リージョン":"1,2,"}},
-{"name":"GraphicalDesignMode","status":true,"description":"GUI画面デザインプラグイン　\r\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"デザインモード":"OFF","自動保存":"OFF","モバイル版作成":"ON","モバイル偽装":"OFF","ウィンドウ透過":"ON","グリッドサイズ":"48","パディング":"","フォントサイズ":"","行の高さ":"","背景透明度":""}},
+{"name":"GraphicalDesignMode","status":false,"description":"GUI画面デザインプラグイン　\r\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"デザインモード":"OFF","自動保存":"OFF","モバイル版作成":"ON","モバイル偽装":"OFF","ウィンドウ透過":"ON","グリッドサイズ":"48","パディング":"","フォントサイズ":"","行の高さ":"","背景透明度":""}},
 {"name":"TouchUI","status":true,"description":"UIをタッチ操作に適したものへ変更します。","parameters":{"Menu Command Text":"メニュー","Previous Command Text":"前","Next Command Text":"次"}},
 {"name":"PictureAnimation","status":true,"description":"ピクチャのアニメーションプラグイン","parameters":{}},
 {"name":"IconDescription","status":true,"description":"アイコン説明プラグイン","parameters":{"効果音":"Cancel1","ウィンドウ透過":"ON"}},
