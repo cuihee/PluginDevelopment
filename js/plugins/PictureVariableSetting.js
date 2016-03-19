@@ -6,6 +6,7 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.2.0 2016/03/19 表示中のすべてのピクチャに処理を適用するコマンドを追加
 // 1.1.2 2016/01/24 ピクチャの最大表示数を設定できる機能を追加
 // 1.1.1 2015/12/20 番号の変数指定の初期値を有効/無効で設定できるよう修正
 // 1.1.0 2015/11/27 ピクチャのファイル名に変数を組み込むことが出来る機能を追加
@@ -17,7 +18,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc ピクチャの変数設定プラグイン
+ * @plugindesc ピクチャ関連のイベント機能拡張プラグイン
  * @author トリアコンタン
  *
  * @param 初期値
@@ -29,12 +30,16 @@
  * 変えない場合は何も入力しないでください。
  * @default
  * 
- * @help ピクチャ関連のイベント命令で番号が「指定された変数の値」になるよう
- * 仕様を変更します。
- * 例えば番号に「1」を設定すると、「1」番の変数の値をピクチャ番号として設定します。
- * プラグインコマンドから有効/無効を切り替えてください。（初期状態では無効です）
+ * @help ピクチャ関連のイベント命令の機能を拡張します。
+ * プラグインコマンドから機能を有効にしてください。
  *
- * さらに、ピクチャのファイル名に変数を組み込むことが出来るようになります。
+ * １．ピクチャ関連のイベント命令で番号が「指定された変数の値」になるよう
+ * 仕様を変更します。
+ * 例えば番号に「1」を設定すると「1」番の変数の値をピクチャ番号として設定します。
+ * プラグインコマンドから「P_VARIABLE_VALID」「P_VARIABLE_INVALID」で
+ * 有効/無効を切り替えてください。（初期状態では無効です）
+ *
+ * ２．ピクチャのファイル名に変数を組み込むことが出来るようになります。
  * 連番を含むファイル名などの柔軟な指定に有効です。
  * プラグインコマンド「P_D_FILENAME」を実行してから
  * 「画像」を指定せず「ピクチャの表示」を行ってください。
@@ -43,21 +48,32 @@
  * 未使用ファイルとして除外される可能性があります。
  * その場合、削除されたファイルを入れ直す等の対応が必要です。
  *
+ * ３．以下のイベントコマンドの対象が「表示している全てのピクチャ」になります。
+ *  ・ピクチャの移動
+ *  ・ピクチャの色調変更
+ *  ・ピクチャの回転
+ *  ・ピクチャの消去
+ *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
  *  （引数の間は半角スペースで区切る）
  *
  *  P_VARIABLE_VALID : ピクチャ番号の変数設定が有効になります。
  *  P_VARIABLE_INVALID : ピクチャ番号の変数設定が無効になります。
- *
- *  一度有効に設定したら、無効にするまでずっとそのままです。
+ *  ※ 一度有効に設定したら、無効にするまでずっとそのままです。
+ *  例 P_VARIABLE_VALID
  *
  *  P_D_FILENAME [ファイル名] :
  *  次に表示するピクチャのファイル名に変数を含めることができます。
  *  変数は「文章の表示」と同様の書式\V[n]で組み込んでください。
  *  拡張子は指定しないでください。
- *
  *  例 P_D_FILENAME file\V[1]
+ *
+ *  P_TARGET_ALL :
+ *  ピクチャ関連のイベントコマンドの対象を
+ *  「表示している全てのピクチャ」に変更します。
+ *  1回実行すると設定はもとに戻ります。
+ *  例 P_TARGET_ALL
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -102,12 +118,6 @@
         return upperFlg ? args.toUpperCase() : args;
     };
 
-    var getArgNumber = function (arg, min, max) {
-        if (arguments.length <= 2) min = -Infinity;
-        if (arguments.length <= 3) max = Infinity;
-        return (parseInt(convertEscapeCharacters(arg), 10) || 0).clamp(min, max);
-    };
-
     var convertEscapeCharacters = function(text) {
         if (text == null) text = '';
         text = text.replace(/\\/g, '\x1b');
@@ -136,6 +146,10 @@
                 break;
             case 'P_D_FILENAME':
                 $gameScreen.dPictureFileName = getArgString(args[0]);
+                break;
+            case 'P_TARGET_ALL':
+                $gameScreen.setPictureTargetAll();
+                break;
         }
     };
 
@@ -195,6 +209,67 @@
     Game_Screen.prototype.clear = function() {
         _Game_Screen_clear.call(this);
         this.dPictureFileName = null;
+    };
+
+    Game_Screen.prototype.setPictureTargetAll = function() {
+        this._pictureTargetAll = true;
+    };
+
+    var _Game_Screen_movePicture = Game_Screen.prototype.movePicture;
+    Game_Screen.prototype.movePicture = function(pictureId, origin, x, y, scaleX,
+                                                 scaleY, opacity, blendMode, duration) {
+        if (this._pictureTargetAll) {
+            this.iteratePictures(function(picture) {
+                picture.move(origin, x, y, scaleX, scaleY, opacity, blendMode, duration);
+            }.bind(this));
+            this._pictureTargetAll = false;
+        } else {
+            _Game_Screen_movePicture.apply(this, arguments);
+        }
+    };
+
+    var _Game_Screen_rotatePicture = Game_Screen.prototype.rotatePicture;
+    Game_Screen.prototype.rotatePicture = function(pictureId, speed) {
+        if (this._pictureTargetAll) {
+            this.iteratePictures(function(picture) {
+                picture.rotate(speed);
+            }.bind(this));
+            this._pictureTargetAll = false;
+        } else {
+            _Game_Screen_rotatePicture.apply(this, arguments);
+        }
+    };
+
+    var _Game_Screen_tintPicture = Game_Screen.prototype.tintPicture;
+    Game_Screen.prototype.tintPicture = function(pictureId, tone, duration) {
+        if (this._pictureTargetAll) {
+            this.iteratePictures(function(picture) {
+                picture.tint(tone, duration);
+            }.bind(this));
+            this._pictureTargetAll = false;
+        } else {
+            _Game_Screen_tintPicture.apply(this, arguments);
+        }
+    };
+
+    var _Game_Screen_erasePicture = Game_Screen.prototype.erasePicture;
+    Game_Screen.prototype.erasePicture = function(pictureId) {
+        if (this._pictureTargetAll) {
+            this.iteratePictures(function(picture, pictureId) {
+                var realPictureId = this.realPictureId(pictureId);
+                this._pictures[realPictureId] = null;
+            }.bind(this));
+            this._pictureTargetAll = false;
+        } else {
+            _Game_Screen_erasePicture.apply(this, arguments);
+        }
+    };
+
+    Game_Screen.prototype.iteratePictures = function(callBack) {
+        for (var i = 1, n = this.maxPictures(); i <= n; i++) {
+            var picture = this.picture(i);
+            if (picture) callBack.call(this, picture, i);
+        }
     };
 
     var _Game_Screen_maxPictures = Game_Screen.prototype.maxPictures;

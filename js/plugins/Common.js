@@ -30,12 +30,13 @@
         str += 'ほらたん様 画像素材(http://illust-hp.com/img/jyank.html)\n';
         str += 'hasegawairue様、WTR様 アナログ時計画像\n';
         str += 'Yanfly様 YEP_MessageCore.js(http://yanfly.moe/2015/10/10/yep-2-message-core/)\n';
+        str += 'takpon様 ウィンドウスキン素材 (http://blackpanda.sblo.jp/)';
         return str;
     };
 
-    var _Scene_Base_update = Scene_Base.prototype.update;
-    Scene_Base.prototype.update = function() {
-        _Scene_Base_update.apply(this, arguments);
+    var _Scene_Title_update = Scene_Title.prototype.update;
+    Scene_Title.prototype.update = function() {
+        _Scene_Title_update.apply(this, arguments);
         if (Input.isTriggered('control') && !Utils.isNwjs()) alert(makeCredit());
     };
 
