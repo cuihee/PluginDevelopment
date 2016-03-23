@@ -1640,6 +1640,7 @@ Window_ItemStatus.prototype.drawItemData = function(i, dx, dy, dw) {
     if (i === 3) {
       effect = this.getEffect(Game_Action.EFFECT_RECOVER_MP);
       value = (effect) ? effect.value2 : '---';
+      if (value === 0) value = '---';
     }
     if (i >= 4) {
       icons = this.getItemIcons(i, icons);
