@@ -430,13 +430,10 @@ Yanfly.Param.ItemNoteParse = eval(Yanfly.Param.ItemNoteParse);
 Yanfly.Item.DataManager_isDatabaseLoaded = DataManager.isDatabaseLoaded;
 DataManager.isDatabaseLoaded = function() {
   if (!Yanfly.Item.DataManager_isDatabaseLoaded.call(this)) return false;
-  if (!Yanfly._loaded_YEP_ItemCore) {
-    this.setDatabaseLengths();
-    this.processItemCoreNotetags($dataItems);
-    this.processItemCoreNotetags($dataWeapons);
-    this.processItemCoreNotetags($dataArmors);
-    Yanfly._loaded_YEP_ItemCore = true;
-  }
+  this.setDatabaseLengths();
+  this.processItemCoreNotetags($dataItems);
+  this.processItemCoreNotetags($dataWeapons);
+  this.processItemCoreNotetags($dataArmors);
   return true;
 };
  
@@ -1003,7 +1000,7 @@ Game_Party.prototype.getIndependentItemTypeMax = function(item) {
  
 Game_Party.prototype.getIndependentItemTypeCur = function(item) {
     if (!item) return 0;
-//�ǉ��ύX�F�厖�ȕ����J�E���g���Ȃ�
+//追加変更：大事な物をカウントしない
     if (DataManager.isItem(item)) {
       var filtered = this.items().filter(function(item, index){
         if (item.itypeId == 1) return true;
@@ -1242,9 +1239,15 @@ Window_ItemList.prototype.drawItemNumber = function(item, dx, dy, dw) {
     Yanfly.Item.Window_ItemList_drawItemNumber.call(this, item, dx, dy, dw);
 };
 
+// アイテム個数番目はここで表示されている … .indexOf(item)/.max
 Window_ItemList.prototype.drawItemCarryNumber = function(item, dx, dy, dw) {
     if (DataManager.isItem(item)) {
-      var index = $gameParty.items().indexOf(item);
+//追加
+      var filtered = $gameParty.items().filter(function(item, index){
+        if (item.itypeId == 1) return true;
+      });
+      var index = filtered.indexOf(item);
+//      var index = $gameParty.items().indexOf(item);
     } else if (DataManager.isWeapon(item)) {
       var index = $gameParty.weapons().indexOf(item);
     } else if (DataManager.isArmor(item)) {
@@ -1323,6 +1326,7 @@ Window_ShopStatus.prototype.drawPossession = function(x, y) {
     Yanfly.Item.Window_ShopStatus_drawPossession.call(this, x, y);
 };
 
+//追加：ここをいじればショップ時の能力変化を書ける 
 Window_ShopStatus.prototype.drawIndependentPossession = function(x, y) {
     var width = this.contents.width - this.textPadding() - x;
     var baseItem = DataManager.getBaseItem(this._item);
@@ -1409,7 +1413,7 @@ Window_ItemCategory.prototype.itemTextAlign = function() {
 Yanfly.Item.Window_ItemList_initialize = Window_ItemList.prototype.initialize;
 Window_ItemList.prototype.initialize = function(x, y, width, height) {
     if (SceneManager._scene instanceof Scene_Item) {
-      width = Graphics.boxWidth / 2;
+      width = Graphics.boxWidth; //追加…1/2を削除 / 2;
     }
     Yanfly.Item.Window_ItemList_initialize.call(this, x, y, width, height);
 };
@@ -1534,7 +1538,9 @@ Window_ItemStatus.prototype.drawItemIcon = function() {
     this.drawLargeIcon();
 };
 
+//追加：firefoxで動作しないため例外処理
 Window_ItemStatus.prototype.drawLargeIcon = function() {
+  if (window.navigator.userAgent.toLowerCase().indexOf('Firefox') == -1) {
     var iconIndex = this._item.iconIndex;
     var bitmap = ImageManager.loadSystem('IconSet');
     var pw = Window_Base._iconWidth;
@@ -1548,6 +1554,7 @@ Window_ItemStatus.prototype.drawLargeIcon = function() {
     this.contents._context.imageSmoothingEnabled = false;
     this.contents.blt(bitmap, sx, sy, pw, ph, dx, dy, dw, dh);
     this.contents._context.imageSmoothingEnabled = true;
+  }
 };
  
 Window_ItemStatus.prototype.drawEquipInfo = function(item) {
@@ -1630,7 +1637,6 @@ Window_ItemStatus.prototype.drawItemData = function(i, dx, dy, dw) {
     if (i === 3) {
       effect = this.getEffect(Game_Action.EFFECT_RECOVER_MP);
       value = (effect) ? effect.value2 : '---';
-      if (value === 0) value = '---';
     }
     if (i >= 4) {
       icons = this.getItemIcons(i, icons);
@@ -1845,7 +1851,7 @@ Window_ItemActionCommand.prototype.initialize = function(x, y) {
 };
  
 Window_ItemActionCommand.prototype.windowWidth = function() {
-    return Graphics.boxWidth / 2;
+    return Graphics.boxWidth; //追加：1/2を削除
 };
  
 Window_ItemActionCommand.prototype.setItem = function(item) {
@@ -1880,7 +1886,7 @@ Window_ItemActionCommand.prototype.addUseCommand = function() {
       text += '\\c[' + this._item.textColor + ']';
     }
     text += this._item.name;
-//�ǉ�
+//追加
     text += '  '
     text += '\\c[' + 0 + ']';
     text = fmt.format(text);
@@ -1909,7 +1915,7 @@ Window_ItemActionCommand.prototype.addCustomCommandsE = function() {
  
 Window_ItemActionCommand.prototype.addCustomCommandsF = function() {
     
-//�ǉ�
+//追加
     var carrier = false;
     for (var a = 0; a < $gameParty.members().length; ++a) {
       var actor = $gameParty.members()[a];
@@ -1971,7 +1977,7 @@ Scene_Item.prototype.createActionWindow = function() {
     var wy = this._itemWindow.y;
     this._itemActionWindow = new Window_ItemActionCommand(0, wy);
     this._itemActionWindow.setHandler('use', this.onActionUse.bind(this));
-//�ǉ�
+//追加
     this._itemActionWindow.setHandler('trash', this.onActionTrash.bind(this));
     this._itemActionWindow.setHandler('cancel', this.onActionCancel.bind(this));
     this.addWindow(this._itemActionWindow);
@@ -2000,7 +2006,7 @@ Scene_Item.prototype.onActionUse = function() {
     this.determineItem();
 };
  
-//�ǉ�
+//追加
 Scene_Item.prototype.onActionTrash = function() {
     $gameParty.gainItem(this.item(), -1, false);
     this._itemActionWindow.hide();
@@ -2008,7 +2014,7 @@ Scene_Item.prototype.onActionTrash = function() {
     this._itemWindow.activate();
     this._itemWindow.refresh();
 };
-//�ǉ�
+//追加
 Game_Party.prototype.gainObject = function(obj, amount) {
     if (DataManager.isItem(obj)) this.gainItem(obj._id, amount);
     if (DataManager.isWeapon(obj)) this.gainWeapon(obj._id, amount);
