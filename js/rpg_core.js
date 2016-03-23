@@ -113,7 +113,7 @@ Array.prototype.clone = function() {
  * Checks whether the array contains a given element.
  *
  * @method Array.prototype.contains
- * @param {Any} element The element to search for
+ * @param {Object} element The element to search for
  * @return {Boolean} True if the array contains a given element
  */
 Array.prototype.contains = function(element) {
@@ -710,7 +710,7 @@ Bitmap.prototype.getPixel = function(x, y) {
  * @method getAlphaPixel
  * @param {Number} x The x coordinate of the pixel in the bitmap
  * @param {Number} y The y coordinate of the pixel in the bitmap
- * @return {String} The alpha value
+ * @return {Number} The alpha value
  */
 Bitmap.prototype.getAlphaPixel = function(x, y) {
     var data = this._context.getImageData(x, y, 1, 1).data;

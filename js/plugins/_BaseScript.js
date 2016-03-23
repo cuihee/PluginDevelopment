@@ -54,6 +54,7 @@
 (function() {
     'use strict';
     var pluginName = '${NAME}';
+    var metaTagPrefix = '${NAME}';
 
     //=============================================================================
     // ローカル関数
@@ -122,18 +123,23 @@
     };
 
     var getArgString = function (arg, upperFlg) {
-        arg = convertEscapeCharacters(arg);
+        arg = convertEscapeCharactersAndEval(arg);
         return upperFlg ? arg.toUpperCase() : arg;
     };
 
     var getArgNumber = function (arg, min, max) {
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
-        return (parseInt(convertEscapeCharacters(arg), 10) || 0).clamp(min, max);
+        return (parseInt(convertEscapeCharactersAndEval(arg), 10) || 0).clamp(min, max);
     };
 
     var getArgBoolean = function(arg) {
         return (arg || '').toUpperCase() == 'ON';
+    };
+
+    var getMetaValue = function(object, name) {
+        var metaTagName = metaTagPrefix + (name ? name : '');
+        return object.meta.hasOwnProperty(metaTagName) ? object.meta[metaTagName] : undefined;
     };
 
     var parseIntStrict = function(value, errorMessage) {
@@ -142,10 +148,10 @@
         return result;
     };
 
-    var convertEscapeCharacters = function(text) {
-        if (text == null) text = '';
+    var convertEscapeCharactersAndEval = function(text) {
+        if (text === null || text === undefined) text = '';
         var window = SceneManager._scene._windowLayer.children[0];
-        return window ? window.convertEscapeCharacters(text) : text;
+        return window ? eval(window.convertEscapeCharacters(text)) : text;
     };
 
     var checkTypeNumber = function(value) {
@@ -189,6 +195,11 @@
     Number.prototype.times = function(handler) {
         var i = 0; while(i < this) handler.call(this, i++);
     };
+
+    //=============================================================================
+    // パラメータの取得とバリデーション
+    //=============================================================================
+    var paramParamName = getParamString(['ParamName', 'パラメータ名']);
 
     //=============================================================================
     // Game_Interpreter

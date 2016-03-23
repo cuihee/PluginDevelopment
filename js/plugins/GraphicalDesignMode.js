@@ -13,8 +13,128 @@
 // [Twitter]: https://twitter.com/triacontane/
 // [GitHub] : https://github.com/triacontane/
 //=============================================================================
-
 /*:
+ * @plugindesc GUI Design mode plugin
+ * @author triacontane
+ *
+ * @param DesignMode
+ * @desc Game start for design mode(ON/OFF)
+ * モード中はドラッグ＆ドロップで位置を調整できます。
+ * @default ON
+ *
+ * @param AutoSave
+ * @desc 位置を変更したときに自動で変更を保存します。(ON/OFF)
+ * 通常は、Ctrl+Sで保存します。
+ * @default OFF
+ *
+ * @param MobileMake
+ * @desc モバイル版のウィンドウ配置を別に作成します。(ON/OFF)
+ * モバイル偽装と併用してください。
+ * @default ON
+ *
+ * @param FakeMobile
+ * @desc モバイル実行を偽装します。(ON/OFF)
+ * モバイル版のウィンドウ作成やテスト時にONにしてください。
+ * @default OFF
+ *
+ * @param ThroughWindow
+ * @desc ウィンドウが重なったときに透過表示します。(ON/OFF)
+ * 他のプラグインで同様機能を実現している場合はOFF。
+ * @default OFF
+ *
+ * @param GridSize
+ * @desc ウィンドウ調整中に指定サイズでグリッドを表示します。
+ * 0を指定すると非表示になります。
+ * @default 48
+ *
+ * @param Padding
+ * @desc ウィンドウ余白のデフォルト値です。入力した場合、適用されます。デフォルト：18
+ * @default
+ *
+ * @param FontSize
+ * @desc ウィンドウフォントサイズのデフォルト値です。入力した場合、適用されます。デフォルト：28
+ * @default
+ *
+ * @param LineHeight
+ * @desc ウィンドウの行高のデフォルト値です。入力した場合、適用されます。デフォルト：36
+ * @default
+ *
+ * @param BackOpacity
+ * @desc ウィンドウの背景透明度デフォルト値です。入力した場合、適用されます。デフォルト：192
+ * @default
+ *
+ * @help メニュー画面や戦闘画面など各画面のウィンドウや画像の表示位置を
+ * ドラッグ＆ドロップで微調整して画面の外観をグラフィカルに設計できます。
+ * 横幅、高さ、余白、背景画像なども画面上で変更できます。
+ *
+ * デフォルトの画面のほかプラグインによって追加された画面についても
+ * 位置のカスタマイズが可能です。
+ * (ただし、相手の実装に依存するので動作保証はできません)
+ *
+ * 以下の手順で実行してください。
+ *
+ * 1. パラメータ「デザインモード」を「ON」にする。
+ *   - デフォルトで「ON」になっています。
+ *
+ * 2. テストプレー、戦闘テスト、イベントテストを開始する。
+ *
+ * 3. マウスでオブジェクトを掴んで好きな場所に配置する。
+ *   - マウスによる通常のウィンドウ操作は無効になります。
+ *   - 他のウィンドウや画面端に自動でスナップします。(Shiftで無効化)
+ *   - Ctrlを押していると、グリッドにスナップします。
+ *   - Ctrl+Zで直前の変更を元に戻します。
+ *   - Ctrl+Shift+Enterで現在のシーンの変更を全て初期化します。
+ *   - ウィンドウ内で右クリックすると、枠の透明/不透明を切り替えます。
+ *   - ウィンドウ内で数字キー(※)を押下すると、各プロパティを変更できます。
+ *
+ * 4. Ctrl+Sでカスタマイズした位置を保存する。
+ *
+ * 5. 通常のテストプレー時は「デザインモード」を「OFF」にする。
+ *
+ * ※数字とプロパティの対応
+ *
+ * 1. ウィンドウの横幅
+ * 2. ウィンドウの高さ(直接指定)
+ * 3. ウィンドウの余白
+ * 4. ウィンドウのフォントサイズ
+ * 5. ウィンドウの1行のあたりの高さ
+ * 6. ウィンドウの背景透明度
+ * 7. ウィンドウの行数
+ * 8. ウィンドウの背景画像ファイル名
+ *
+ * また、任意のピクチャやウィンドウを追加表示することができます。
+ * 詳細はソースコードの「ユーザ書き換え領域」を参照してください。
+ * 追加表示したものも、ドラッグ＆ドロップで位置を調整できます。
+ *
+ * セーブした内容は「data/ContainerProperties.json」に保存されます。
+ * JSONエディタ等で編集することも可能です。
+ *
+ * さらに、モバイル端末用に異なるウィンドウ配置を定義することもできます。
+ * モバイル用の配置情報は「data/ContainerPropertiesMobile.json」に保存されます。
+ *
+ * モバイル偽装のオプションを有効にすると、モバイル端末での実行をPC上で
+ * 再現できます。モバイル実行を再現すると音声や動画ファイルの使用形式が
+ * 変化したり、音声ファイルの再生が行われなくなったりする可能性があります。
+ *
+ * 本プラグインで位置を変更したウィンドウは、以後位置を変更することができなくなります。
+ * よって、ゲーム中に動的に位置が変更されるウィンドウに対して本プラグインで
+ * 位置を固定すると正常に表示されなくなる場合があります。
+ *
+ * そういったケースを含め、表示がおかしくなった場合は
+ * 一旦、Ctrl+Shift+Enterを実行して画面中の全てのウィンドウを初期化することを勧めます。
+ *
+ * 要注意！　追加したピクチャは、デプロイメント時に
+ * 未使用ファイルとして除外される可能性があります。
+ * その場合、削除されたファイルを入れ直す等の対応が必要です。
+ *
+ * このプラグインにはプラグインコマンドはありません。
+ *
+ * 利用規約：
+ *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
+ *  についても制限はありません。
+ *  このプラグインはもうあなたのものです。
+ */
+/*:ja
  * @plugindesc GUI画面デザインプラグイン　
  * パラメータを変更したら「プロジェクトの保存」（Ctrl+S）
  * @author トリアコンタン
@@ -335,7 +455,7 @@ var $dataContainerProperties = null;
     var paramPadding         = getParamNumber(['Padding', 'パディング']);
     var paramFontSize        = getParamNumber(['FontSize', 'フォントサイズ']);
     var paramLineHeight      = getParamNumber(['LineHeight', '行の高さ']);
-    var paramBackOpacity     = getParamNumber(['LineHeight', '背景透明度']);
+    var paramBackOpacity     = getParamNumber(['BackOpacity', '背景透明度']);
     var paramMobileMake      = getParamBoolean(['MobileMake', 'モバイル版作成']);
     var paramFakeMobile      = getParamBoolean(['FakeMobile', 'モバイル偽装']);
 
@@ -700,6 +820,7 @@ var $dataContainerProperties = null;
                 SoundManager.playMiss();
                 SceneManager.pushChangeStack(this);
                 this.opacity = (this.opacity === 255 ? 0 : 255);
+                this._customOpacity = this.opacity;
                 this.saveContainerInfo();
                 return true;
             }
@@ -711,14 +832,14 @@ var $dataContainerProperties = null;
         Window_Base.prototype.processInput = function() {
             if (this.isPreparedEvent()) {
                 var params = [
-                    ['num1', '横幅', 'width', 1, 2000, null],
-                    ['num2', '高さ', 'height', 1, 2000, null],
-                    ['num3', 'パディング', '_customPadding', 1, 100, this.updatePadding.bind(this)],
-                    ['num4', 'フォントサイズ', '_customFontSize', 1, 100, this.resetFontSettings.bind(this)],
-                    ['num5', '行の高さ', '_customLineHeight', 1, 2000, this.setFittingHeight.bind(this)],
-                    ['num6', '背景の透明度', '_customBackOpacity', 0, 255, this.updateBackOpacity.bind(this)],
-                    ['num7', '行数', '_customLineNumber', 0, 999, this.setFittingHeight.bind(this)],
-                    ['num8', '背景画像のファイル名', '_customBackFileName', null, null, this.createBackSprite.bind(this), true]
+                    ['num1', '横幅', 'customWidth', 1, 2000, null, this.width],
+                    ['num2', '高さ', 'customHeight', 1, 2000, null, this.height],
+                    ['num3', 'パディング', '_customPadding', 1, 100, this.updatePadding.bind(this), this.padding],
+                    ['num4', 'フォントサイズ', '_customFontSize', 1, 100, this.resetFontSettings.bind(this), this.contents.fontSize],
+                    ['num5', '行の高さ', '_customLineHeight', 1, 2000, this.setFittingHeight.bind(this), this.lineHeight()],
+                    ['num6', '背景の透明度', '_customBackOpacity', 0, 255, this.updateBackOpacity.bind(this), this.backOpacity],
+                    ['num7', '行数', '_customLineNumber', 0, 999, this.setFittingHeight.bind(this), Math.floor(this.contents.height / this.lineHeight())],
+                    ['num8', '背景画像のファイル名', '_customBackFileName', null, null, this.createBackSprite.bind(this), this._customBackFileName, true]
                 ];
                 return params.some(function(param){
                     return this.processSetProperty.apply(this, param);
@@ -731,27 +852,11 @@ var $dataContainerProperties = null;
             if (this._customLineNumber) this.height = this.fittingHeight(this._customLineNumber);
         };
 
-        var _Window_Base_createBackSprite = Window_Base.prototype.createBackSprite;
-        Window_Base.prototype.createBackSprite = function() {
-            _Window_Base_createBackSprite.apply(this, arguments);
-            if (this._customBackSprite && this._customBackSprite.bitmap) {
-                var bitmap = this._customBackSprite.bitmap;
-                bitmap._image.onerror = function() {
-                    this._customBackFileName = '';
-                    this._customBackSprite.bitmap._isLoading = false;
-                    this._customBackSprite.bitmap = null;
-                    this._customBackSprite = null;
-                    SceneManager.popChangeStack();
-                    SceneManager.setInfoExtend('ファイルが見付からなかったので、左記の番号の変更を戻しました。', -1);
-                }.bind(this);
-            }
-        };
-
         PIXI.DisplayObjectContainer.prototype.processSetProperty = function(
-            keyCode, propLabel, propName, min, max, callBack, stringFlg) {
-            if (this[propName] === undefined) return;
+            keyCode, propLabel, propName, min, max, callBack, defaultValue, stringFlg) {
+            defaultValue = (defaultValue === null ? '' : defaultValue);
             if (Input.isTriggered(keyCode)) {
-                var result = window.prompt(propLabel + 'を入力してください。', this[propName].toString());
+                var result = window.prompt(propLabel + 'を入力してください。', defaultValue.toString());
                 if (result || (stringFlg && result === '')) {
                     SceneManager.pushChangeStack(this);
                     this[propName] = stringFlg ? getArgString(result) : getArgNumber(result, min, max);
@@ -772,6 +877,8 @@ var $dataContainerProperties = null;
         Window_Base.prototype.reDrawContents = function() {
             this.refresh();
         };
+
+        Window_Base.prototype.refresh = function() {};
 
         Window_Selectable.prototype.reDrawContents = function() {
             Window_Base.prototype.reDrawContents.apply(this, arguments);
@@ -801,11 +908,17 @@ var $dataContainerProperties = null;
 
         Sprite.prototype.hold = function() {
             PIXI.DisplayObjectContainer.prototype.hold.call(this);
+            this._startX = this.x;
+            this._startY = this.y;
             this.setBlendColor([255,255,255,192]);
         };
 
         PIXI.DisplayObjectContainer.prototype.release = function() {
             this._holding = false;
+            if (this._startX !== this.x || this._startY !== this.y) {
+                this._customX = this.x;
+                this._customY = this.y;
+            }
             this.saveContainerInfo();
         };
 
@@ -1163,20 +1276,20 @@ var $dataContainerProperties = null;
     };
 
     PIXI.DisplayObjectContainer.prototype.loadProperty = function(containerInfo) {
-        this.position.x = containerInfo.x;
-        this.position.y = containerInfo.y;
+        if (containerInfo.x != null) this.position.x = containerInfo.x;
+        if (containerInfo.y != null) this.position.y = containerInfo.y;
     };
 
     Window_Base.prototype.loadProperty = function(containerInfo) {
         PIXI.DisplayObjectContainer.prototype.loadProperty.apply(this, arguments);
-        this.width   = containerInfo.width;
-        this.height  = containerInfo.height;
-        this.opacity = containerInfo.opacity;
-        this._customFontSize     = containerInfo._customFontSize;
-        this._customPadding      = containerInfo._customPadding;
-        this._customLineHeight   = containerInfo._customLineHeight;
-        this._customBackOpacity  = containerInfo._customBackOpacity;
-        this._customBackFileName = containerInfo._customBackFileName;
+        if (containerInfo.width   != null) this.width   = containerInfo.width;
+        if (containerInfo.height  != null) this.height  = containerInfo.height;
+        if (containerInfo.opacity != null) this.opacity = containerInfo.opacity;
+        this._customFontSize     = containerInfo.fontSize;
+        this._customPadding      = containerInfo.padding;
+        this._customLineHeight   = containerInfo.lineHeight;
+        this._customBackOpacity  = containerInfo.backOpacity;
+        this._customBackFileName = containerInfo.backFileName;
         this.refresh();
         this.createBackSprite();
     };
@@ -1202,36 +1315,62 @@ var $dataContainerProperties = null;
     };
 
     PIXI.DisplayObjectContainer.prototype.saveProperty = function(containerInfo) {
-        containerInfo.x = this.x;
-        containerInfo.y = this.y;
+        containerInfo.x = this._customX;
+        containerInfo.y = this._customY;
     };
 
     Window_Base.prototype.saveProperty = function(containerInfo) {
         PIXI.DisplayObjectContainer.prototype.saveProperty.apply(this, arguments);
-        containerInfo.width   = this.width;
-        containerInfo.height  = this.height;
-        containerInfo.opacity = this.opacity;
-        containerInfo._customFontSize     = this._customFontSize;
-        containerInfo._customPadding      = this._customPadding;
-        containerInfo._customLineHeight   = this._customLineHeight;
-        containerInfo._customBackOpacity  = this._customBackOpacity;
-        containerInfo._customBackFileName = this._customBackFileName;
+        containerInfo.width        = this.customWidth;
+        containerInfo.height       = this.customHeight;
+        containerInfo.opacity      = this._customOpacity;
+        containerInfo.fontSize     = this._customFontSize;
+        containerInfo.padding      = this._customPadding;
+        containerInfo.lineHeight   = this._customLineHeight;
+        containerInfo.backOpacity  = this._customBackOpacity;
+        containerInfo.backFileName = this._customBackFileName;
     };
 
     //=============================================================================
     // Window_Base
     //  プロパティの値をカスタマイズします。
     //=============================================================================
+    Object.defineProperty(Window_Base.prototype, 'customWidth', {
+        get: function() {
+            return this._customWidth;
+        },
+        set: function(value) {
+            this._customWidth = value;
+            if (value !== null) this.width = value;
+        },
+        configurable: true
+    });
+
+    Object.defineProperty(Window_Base.prototype, 'customHeight', {
+        get: function() {
+            return this._customHeight;
+        },
+        set: function(value) {
+            this._customHeight = value;
+            if (value !== null) this.height = value;
+        },
+        configurable: true
+    });
+
     var _Window_Base_initialize = Window_Base.prototype.initialize;
     Window_Base.prototype.initialize = function(x, y, width, height) {
         _Window_Base_initialize.apply(this, arguments);
-        this._customFontSize    = this.standardFontSize();
-        this._customPadding     = this.standardPadding();
-        this._customLineHeight  = this.lineHeight();
-        this._customLineNumber  = 0;
-        this._customBackOpacity = this.standardBackOpacity();
-        this._customBackSprite  = null;
-        this._customBackFileName = '';
+        this._customFontSize     = null;
+        this._customPadding      = null;
+        this._customLineHeight   = null;
+        this._customLineNumber   = null;
+        this._customBackOpacity  = null;
+        this._customBackSprite   = null;
+        this._customBackFileName = null;
+        this._customX            = null;
+        this._customY            = null;
+        this.customWidth         = null;
+        this.customHeight        = null;
     };
 
     Window_Base.prototype.createBackSprite = function() {
@@ -1241,6 +1380,17 @@ var $dataContainerProperties = null;
                 this.addChildToBack(this._customBackSprite);
             }
             this._customBackSprite.bitmap = ImageManager.loadPicture(this._customBackFileName, 0);
+            if (Utils.isDesignMode()) {
+                var bitmap = this._customBackSprite.bitmap;
+                bitmap._image.onerror = function() {
+                    this._customBackFileName = '';
+                    this._customBackSprite.bitmap._isLoading = false;
+                    this._customBackSprite.bitmap = null;
+                    this._customBackSprite = null;
+                    SceneManager.popChangeStack();
+                    SceneManager.setInfoExtend('ファイルが見付からなかったので、左記の番号の変更を戻しました。', -1);
+                }.bind(this);
+            }
         } else if (this._customBackSprite) {
             this.removeChild(this._customBackSprite);
             this._customBackSprite = null;

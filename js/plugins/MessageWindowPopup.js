@@ -6,6 +6,10 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.3.0 2016/03/21 ウィンドウの表示位置をキャラクターの高さに合わせて自動調整するよう修正
+//                  ポップアップウィンドウ専用のウィンドウスキンを使用する機能を追加
+//                  位置とサイズを微調整する機能を追加
+//                  選択肢と数値入力ウィンドウの表示方法を2種類追加
 // 1.2.3 2016/02/23 YEP_MessageCore.jsより上に配置した場合に発生するエラーを修正
 //                  （正常に動作しない点はそのままです）
 // 1.2.2 2016/02/20 YEP_MessageCore.js最新版に対応
@@ -57,6 +61,10 @@
  * @desc Between the Lines
  * @default 4
  *
+ * @param ThroughWindow
+ * @desc Window through if overlap windows(ON/OFF)
+ * @default OFF
+ *
  * @help Change the message window from fixed to popup
  *
  * Plugin Command
@@ -71,7 +79,7 @@
  * ex:MWP_INVALID
  *
  * MWP_SETTING [parameter]
- *  Popup window setting parameter is...
+ *  Popup window setting. parameter are...
  *   POS_UPPER
  *     Window position fixed upper.
  *
@@ -80,6 +88,27 @@
  *
  * 　POS_AUTO
  *     Window position auto.
+ *
+ *   SKIN [File name(/img/system/...)]
+ *     Setting window skin for popup message.
+ *
+ *   SUB_POS_PLAYER
+ *     Choice window or NumberInput displays player.
+ *
+ *   SUB_POS_INNER
+ *     Choice window or NumberInput displays internal message window.
+ *
+ *   SUB_POS_NORMAL
+ *     Choice window or NumberInput displays normal position.
+ *
+ * MWP_ADJUST [parameter]
+ *   Popup window adjust. parameter are...
+ *
+ *   POS [X] [Y]
+ *     Popup window adjust relative position.
+ *
+ * 　SIZE [Width] [Height]
+ * 　　Popup window adjust relative size.
  *
  * This plugin is released under the MIT License.
  */
@@ -115,6 +144,11 @@
  * @desc 行と行の間のスペースをピクセル単位で設定します。
  * @default 4
  *
+ * @param ウィンドウ透過
+ * @desc ウィンドウが重なったときに透過表示します。(ON/OFF)
+ * 選択肢をフキダシ内に表示する場合はONにしてください。
+ * @default OFF
+ *
  * @help メッセージウィンドウを指定したキャラクターの頭上にフキダシで
  * 表示するよう変更します。
  *
@@ -144,6 +178,7 @@
  * MWP_SETTING [設定内容] or
  * フキダシウィンドウ設定 [設定内容]
  * 　フキダシウィンドウの設定を行います。設定内容に以下を入力。
+ *
  * 　POS_UPPER or 位置_上固定
  * 　　ウィンドウの位置をキャラクターの上で固定します。
  *
@@ -154,8 +189,40 @@
  * 　　通常はキャラクターの上に表示し、ウィンドウが上に見切れる場合のみ
  * 　　下に表示します。
  *
+ *   SKIN or スキン [/img/system/以下に配置するスキンのファイル名]
+ *     フキダシウィンドウ時専用のウィンドウスキンを設定します。
+ *
+ *   SUB_POS_PLAYER or サブ位置_プレイヤーの頭上
+ *   　選択肢および数値入力のウィンドウをプレイヤーの頭上に表示します。
+ *   　位置関係次第でウィンドウが被る場合があるので、必要に応じて
+ *   　ウィンドウ透過のパラメータを有効にしてください。
+ *
+ *   SUB_POS_INNER or サブ位置_メッセージウィンドウ内部
+ *     選択肢および数値入力のウィンドウをメッセージウィンドウに含めます。
+ *     この設定を使用する場合は必ずウィンドウ透過のパラメータを
+ *     有効にしてください。
+ *
+ *   SUB_POS_NORMAL or サブ位置_通常
+ *   　選択肢および数値入力のウィンドウをフキダシウィンドウの下に表示します。
+ *   　特に設定を変更しない場合はこの設定になります。
+ *
  * 例：MWP_SETTING POS_UPPER
  * 　　フキダシウィンドウ設定 位置_自動
+ * 　　MWP_SETTING SKIN window2
+ * 　　フキダシウィンドウ設定 サブ位置_プレイヤーの頭上
+ *
+ * MWP_ADJUST [設定内容] or
+ * フキダシウィンドウ調整 [設定内容]
+ * 　フキダシウィンドウの表示位置やサイズを微調整します。設定内容に以下を入力。
+ *
+ * 　POS or 位置 [X座標] [Y座標]
+ * 　　ウィンドウのX座標とY座標を調整します。指定するのは元の座標からの相対です。
+ *
+ * 　SIZE or サイズ [横幅] [高さ]
+ * 　　ウィンドウの横幅と高さを調整します。指定するのは元のサイズからの相対です。
+ *
+ * 例：MWP_ADJUST POS 5 -3
+ * 　　フキダシウィンドウ調整 サイズ 20 -40
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -215,6 +282,17 @@
         var window = SceneManager._scene._windowLayer.children[0];
         return window ? window.convertEscapeCharacters(text) : text;
     };
+
+    //=============================================================================
+    // パラメータのバリデーション
+    //=============================================================================
+    var paramThroughWindow = getParamBoolean(['ThroughWindow', 'ウィンドウ透過']);
+    var paramFaceScale     = getParamNumber(['FaceScale', 'フェイス倍率'], 1, 100);
+    var paramFontSize      = getParamNumber(['FontSize', 'フォントサイズ'], 1);
+    var paramPadding       = getParamNumber(['Padding', '余白'], 1);
+    var paramLinkage       = getParamBoolean(['WindowLinkage', 'ウィンドウ連携']);
+    var paramBetweenLines  = getParamNumber(['BetweenLines', '行間'], 0);
+    var paramAutoPopup     = getParamBoolean(['AutoPopup', '自動設定']);
 
     //=============================================================================
     // Game_Interpreter
@@ -288,7 +366,16 @@
                 break;
             case 'MWP_ADJUST':
             case 'フキダシウィンドウ調整':
-                $gameSystem.setPopupAdjust(getArgNumber(args[0]), getArgNumber(args[1]));
+                switch (getCommandName(args[0])) {
+                    case 'SIZE' :
+                    case 'サイズ':
+                        $gameSystem.setPopupAdjustSize(getArgNumber(args[1]), getArgNumber(args[2]));
+                        break;
+                    case 'POS' :
+                    case '位置':
+                        $gameSystem.setPopupAdjustPosition(getArgNumber(args[1]), getArgNumber(args[2]));
+                        break;
+                }
                 break;
         }
     };
@@ -314,10 +401,11 @@
     var _Game_System_initialize = Game_System.prototype.initialize;
     Game_System.prototype.initialize = function() {
         _Game_System_initialize.apply(this, arguments);
-        this._messagePopupCharacterId = 0;
-        this._messagePopupPosition = null;
-        this._messagePopupAdjust = null;
-        this._messagePopupWindowSkin = null;
+        this._messagePopupCharacterId       = 0;
+        this._messagePopupPosition          = null;
+        this._messagePopupAdjustSize        = null;
+        this._messagePopupAdjustPosition    = null;
+        this._messagePopupWindowSkin        = null;
         this._messagePopupSubWindowPosition = 0;
     };
 
@@ -362,12 +450,20 @@
         this._messagePopupPosition = 0;
     };
 
-    Game_System.prototype.setPopupAdjust = function(w, h) {
-        this._messagePopupAdjust = [w, h];
+    Game_System.prototype.setPopupAdjustSize = function(w, h) {
+        this._messagePopupAdjustSize = [w, h];
     };
 
-    Game_System.prototype.getPopupAdjust = function() {
-        return this._messagePopupAdjust;
+    Game_System.prototype.getPopupAdjustSize = function() {
+        return this._messagePopupAdjustSize;
+    };
+
+    Game_System.prototype.setPopupAdjustPosition = function(x, y) {
+        this._messagePopupAdjustPosition = [x, y];
+    };
+
+    Game_System.prototype.getPopupAdjustPosition = function() {
+        return this._messagePopupAdjustPosition;
     };
 
     Game_System.prototype.isPopupFixUpper = function() {
@@ -386,7 +482,7 @@
     Game_Map.prototype.setupStartingMapEvent = function() {
         var result = _Game_Map_setupStartingMapEvent.apply(this, arguments);
         if (result) {
-            if (getParamBoolean(['AutoPopup', '自動設定'])) {
+            if (paramAutoPopup) {
                 $gameSystem.setMessagePopup(this._interpreter.eventId());
             } else {
                 $gameSystem.clearMessagePopup();
@@ -410,12 +506,6 @@
         _Game_Troop_setup.apply(this, arguments);
         $gameSystem.clearMessagePopup();
     };
-
-    var paramFaceScale    = getParamNumber(['FaceScale', 'フェイス倍率'], 1, 100);
-    var paramFontSize     = getParamNumber(['FontSize', 'フォントサイズ'], 1);
-    var paramPadding      = getParamNumber(['Padding', '余白'], 1);
-    var paramLinkage      = getParamBoolean(['WindowLinkage', 'ウィンドウ連携']);
-    var paramBetweenLines = getParamNumber(['BetweenLines', '行間'], 0);
 
     //=============================================================================
     // Game_CharacterBase
@@ -441,10 +531,14 @@
     //=============================================================================
     var _Sprite_Character_updateBitmap = Sprite_Character.prototype.updateBitmap;
     Sprite_Character.prototype.updateBitmap = function() {
+        if (this.isImageChanged()) this._imageChange = true;
         _Sprite_Character_updateBitmap.apply(this, arguments);
-        this.bitmap.addLoadListener(function() {
-            this._character.setSizeForMessagePopup(this.width, this.height);
-        }.bind(this));
+        if (this._imageChange) {
+            this.bitmap.addLoadListener(function() {
+                this._character.setSizeForMessagePopup(this.patternWidth(), this.patternHeight());
+            }.bind(this));
+            this._imageChange = false;
+        }
     };
 
     //=============================================================================
@@ -469,7 +563,7 @@
         } else {
             this._windowPauseSignSprite.rotation = 0;
             this._windowPauseSignSprite.y        = this.height + 12;
-            this._windowPauseSignSprite.anchor.y = 1.0;
+            this._windowPauseSignSprite.anchor.y = 1;
         }
         this._pauseSingToTail = true;
     };
@@ -492,8 +586,9 @@
     };
 
     Window_Base.prototype.setPopupPosition = function(character) {
-        this.x = character.screenX() - this.width / 2;
-        this.y = character.screenY() - this.height - (character.getSizeForMessagePopup()[1] + 8);
+        var pos = $gameSystem.getPopupAdjustPosition();
+        this.x = character.screenX() - this.width / 2 + (pos ? pos[0] : 0);
+        this.y = character.screenY() - this.height - (character.getSizeForMessagePopup()[1] + 8) + (pos ? pos[1] : 0);
         var lowerFlg = this.isPopupLower();
         if (lowerFlg) this.y = character.screenY() + 8;
         this.setPauseSignToTail(lowerFlg);
@@ -509,15 +604,9 @@
         this._windowPauseSignSprite.x = this._width / 2 + deltaX;
     };
 
-    var _Window_Base_updatePlacement = Window_Base.prototype.updatePlacement;
-    Window_Base.prototype.updatePlacement = function() {
-        _Window_Base_updatePlacement.apply(this, arguments);
-        if (this.isPopup()) this.updatePlacementPopup();
-    };
-
     Window_Base.prototype.updatePlacementPopup = function() {
         if (!this._messageWindow) return;
-        if (paramLinkage && this._messageWindow.openness > 0) {
+        if (paramLinkage) {
             switch ($gameSystem.getPopupSubWindowPosition()) {
                 case 0:
                     this.x = this._messageWindow.x;
@@ -526,6 +615,13 @@
                     break;
                 case 1:
                     this.setPopupPosition($gamePlayer);
+                    break;
+                case 2:
+                    var pos = this._messageWindow.getSubWindowPosition();
+                    this.x = pos.x;
+                    this.y = pos.y;
+                    this.setPauseSignToNormal();
+                    this.opacity = 0;
                     break;
             }
         } else {
@@ -546,6 +642,7 @@
         this.width   = this.windowWidth();
         this.height  = this.windowHeight();
         this.loadWindowskin();
+        this.setPauseSignToNormal();
     };
 
     //=============================================================================
@@ -573,10 +670,14 @@
 
     var _Window_Message_startMessage = Window_Message.prototype.startMessage;
     Window_Message.prototype.startMessage = function() {
-        this._targetCharacterId = $gameSystem.getMessagePopupId();
+        this.updateTargetCharacterId();
         _Window_Message_startMessage.apply(this, arguments);
         this.loadWindowskin();
         this.resetLayout();
+    };
+
+    Window_Message.prototype.updateTargetCharacterId = function() {
+        this._targetCharacterId = $gameSystem.getMessagePopupId();
     };
 
     var _Window_Message_resetFontSettings = Window_Message.prototype.resetFontSettings;
@@ -591,7 +692,7 @@
     };
 
     Window_Message.prototype.isPopup = function() {
-       return !!this._targetCharacterId;
+       return !!this.getPopupTargetCharacter();
     };
 
     var _Window_Message_update = Window_Message.prototype.update;
@@ -613,11 +714,10 @@
 
     Window_Message.prototype.updatePlacementPopup = function() {
         this.setPopupPosition(this.getPopupTargetCharacter());
-        this.subWindows().forEach(function(subWindow) {
-            if (checkTypeFunction(subWindow.updatePlacementPopup)) {
-                subWindow.updatePlacementPopup();
-            }
-        });
+        if (this._choiceWindow && $gameMessage.isChoice()) {
+            this._choiceWindow.updatePlacementPopup();
+        }
+        this._numberWindow.updatePlacementPopup();
         if (this._nameWindow && checkTypeFunction(this._nameWindow.updatePlacementPopup)) {
             this._nameWindow.updatePlacementPopup();
         }
@@ -646,9 +746,32 @@
             this.processVirtualCharacter(virtual);
         }
         virtual.y += virtual.height;
-        var adjust = $gameSystem.getPopupAdjust();
-        this.width  = virtual.maxWidth + this.padding * 2 + (adjust ? adjust[0] : 0);
-        this.height = Math.max(this.getFaceHeight(), virtual.y) + this.padding * 2 + (adjust ? adjust[1] : 0);
+        this._subWindowY = virtual.y;
+        var choices = $gameMessage.choices();
+        if (choices && $gameSystem.getPopupSubWindowPosition() === 2) {
+            virtual.y += choices.length * this._choiceWindow.lineHeight();
+            virtual.maxWidth = Math.max(virtual.maxWidth, this.newLineX() + this._choiceWindow.maxChoiceWidth());
+        }
+        var digit = $gameMessage.numInputMaxDigits();
+        if (digit && $gameSystem.getPopupSubWindowPosition() === 2) {
+            virtual.y += this._numberWindow.lineHeight();
+        }
+        var width = virtual.maxWidth + this.padding * 2;
+        var height = Math.max(this.getFaceHeight(), virtual.y) + this.padding * 2;
+        var adjust = $gameSystem.getPopupAdjustSize();
+        if (adjust) {
+            width += adjust[0];
+            height += adjust[1];
+        }
+        this.width  = width;
+        this.height = height;
+    };
+
+    Window_Message.prototype.getSubWindowPosition = function() {
+        var pos = new Point();
+        pos.x = this.x + this.newLineX();
+        pos.y = this.y + this._subWindowY;
+        return pos;
     };
 
     Window_Message.prototype.processVirtualCharacter = function(textState) {
@@ -720,8 +843,7 @@
             var sw = Math.min(width, pw);
             var sh = Math.min(height, ph);
             var dx = Math.floor(x + Math.max(width - pw, 0) / 2);
-            var dy = Math.floor(y + Math.max(height - ph, 0) / 2) +
-                (this.height - this.padding * 2) / 2 - Window_Message._faceHeight / 2;
+            var dy = Math.floor(y + Math.max(height - ph, 0) / 2);
             var sx = faceIndex % 4 * pw + (pw - sw) / 2;
             var sy = Math.floor(faceIndex / 4) * ph + (ph - sh) / 2;
             this.contents.blt(bitmap, sx, sy, sw, sh, dx, dy, Window_Message._faceWidth, Window_Message._faceHeight);
@@ -747,6 +869,13 @@
     var _Window_ChoiceList_lineHeight = Window_ChoiceList.prototype.lineHeight;
     Window_ChoiceList.prototype.lineHeight = function() {
         return this.isPopupLinkage() ? paramFontSize + 8 : _Window_ChoiceList_lineHeight.apply(this, arguments);
+    };
+
+    var _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+    Window_ChoiceList.prototype.updatePlacement = function() {
+        this.resetLayout();
+        _Window_ChoiceList_updatePlacement.apply(this, arguments);
+        if (this.isPopup()) this.updatePlacementPopup();
     };
 
     var _Window_ChoiceList_refresh = Window_ChoiceList.prototype.refresh;
@@ -778,10 +907,12 @@
         return this.isPopupLinkage() ? paramFontSize + 8 : _Window_NumberInput_lineHeight.apply(this, arguments);
     };
 
-    var _Window_NumberInput_refresh = Window_NumberInput.prototype.refresh;
-    Window_NumberInput.prototype.refresh = function() {
+    var _Window_NumberInput_updatePlacement = Window_NumberInput.prototype.updatePlacement;
+    Window_NumberInput.prototype.updatePlacement = function() {
         this.resetLayout();
-        _Window_NumberInput_refresh.apply(this, arguments);
+        this.opacity = 255;
+        _Window_NumberInput_updatePlacement.apply(this, arguments);
+        if (this.isPopup()) this.updatePlacementPopup();
     };
 
     Window_NumberInput.prototype.isPopup = function() {
@@ -792,36 +923,63 @@
     // Window_NameBox
     //  メッセージウィンドウに連動して表示位置と余白を調整します。
     //=============================================================================
-    if (typeof Window_NameBox === 'undefined') return;
+    if (typeof Window_NameBox !== 'undefined') {
+        var _Window_NameBox_standardFontSize = Window_NameBox.prototype.standardFontSize;
+        Window_NameBox.prototype.standardFontSize = function() {
+            return this.isPopupLinkage() ? paramFontSize : _Window_NameBox_standardFontSize.apply(this, arguments);
+        };
 
-    var _Window_NameBox_standardFontSize = Window_NameBox.prototype.standardFontSize;
-    Window_NameBox.prototype.standardFontSize = function() {
-        return this.isPopupLinkage() ? paramFontSize : _Window_NameBox_standardFontSize.apply(this, arguments);
-    };
+        var _Window_NameBox_standardPadding = Window_NameBox.prototype.standardPadding;
+        Window_NameBox.prototype.standardPadding = function() {
+            return this.isPopupLinkage() ? paramPadding : _Window_NameBox_standardPadding.apply(this, arguments);
+        };
 
-    var _Window_NameBox_standardPadding = Window_NameBox.prototype.standardPadding;
-    Window_NameBox.prototype.standardPadding = function() {
-        return this.isPopupLinkage() ? paramPadding : _Window_NameBox_standardPadding.apply(this, arguments);
-    };
+        var _Window_NameBox_lineHeight = Window_NameBox.prototype.lineHeight;
+        Window_NameBox.prototype.lineHeight = function() {
+            return this.isPopupLinkage() ? paramFontSize + 8 : _Window_NameBox_lineHeight.apply(this, arguments);
+        };
 
-    var _Window_NameBox_lineHeight = Window_NameBox.prototype.lineHeight;
-    Window_NameBox.prototype.lineHeight = function() {
-        return this.isPopupLinkage() ? paramFontSize + 8 : _Window_NameBox_lineHeight.apply(this, arguments);
-    };
+        var _Window_NameBox_updatePlacement = Window_NameBox.prototype.updatePlacement;
+        Window_NameBox.prototype.updatePlacement = function() {
+            this.resetLayout();
+            _Window_NameBox_updatePlacement.apply(this, arguments);
+            if (this.isPopup()) this.updatePlacementPopup();
+        };
 
-    var _Window_NameBox_refresh = Window_NameBox.prototype.refresh;
-    Window_NameBox.prototype.refresh = function() {
-        this.resetLayout();
-        return _Window_NameBox_refresh.apply(this, arguments);
-    };
+        var _Window_NameBox_refresh = Window_NameBox.prototype.refresh;
+        Window_NameBox.prototype.refresh = function() {
+            this.resetLayout();
+            return _Window_NameBox_refresh.apply(this, arguments);
+        };
 
-    Window_NameBox.prototype.isPopup = function() {
-        return this._parentWindow.isPopup();
-    };
+        Window_NameBox.prototype.isPopup = function() {
+            return this._parentWindow.isPopup();
+        };
 
-    Window_NameBox.prototype.updatePlacementPopup = function() {
-        this.x = this._parentWindow.x;
-        this.y = this._parentWindow.y - this.height;
-    };
+        Window_NameBox.prototype.updatePlacementPopup = function() {
+            this.x = this._parentWindow.x;
+            this.y = this._parentWindow.y - this.height;
+        };
+    }
+
+    //=============================================================================
+    // ウィンドウを透過して重なり合ったときの表示を自然にします。
+    //=============================================================================
+    if (paramThroughWindow && !WindowLayer.throughWindow) {
+        WindowLayer.throughWindow = true;
+        //=============================================================================
+        //  WindowLayer
+        //   描画前に配列を逆転させます。
+        //=============================================================================
+        var _WindowLayer__renderWebGL = WindowLayer.prototype._renderWebGL;
+        WindowLayer.prototype._renderWebGL = function(renderSession) {
+            this.children.reverse();
+            _WindowLayer__renderWebGL.apply(this, arguments);
+            this.children.reverse();
+        };
+
+        WindowLayer.prototype._webglMaskWindow = function(renderSession, window) {};
+        WindowLayer.prototype._canvasClearWindowRect = function(renderSession, window) {};
+    }
 })();
 
