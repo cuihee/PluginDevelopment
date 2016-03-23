@@ -1242,15 +1242,9 @@ Window_ItemList.prototype.drawItemNumber = function(item, dx, dy, dw) {
     Yanfly.Item.Window_ItemList_drawItemNumber.call(this, item, dx, dy, dw);
 };
 
-// アイテム個数番目はここで表示されている … .indexOf(item)/.max
 Window_ItemList.prototype.drawItemCarryNumber = function(item, dx, dy, dw) {
     if (DataManager.isItem(item)) {
-//追加
-      var filtered = $gameParty.items().filter(function(item, index){
-        if (item.itypeId == 1) return true;
-      });
-      var index = filtered.indexOf(item);
-//      var index = $gameParty.items().indexOf(item);
+      var index = $gameParty.items().indexOf(item);
     } else if (DataManager.isWeapon(item)) {
       var index = $gameParty.weapons().indexOf(item);
     } else if (DataManager.isArmor(item)) {
@@ -1329,7 +1323,6 @@ Window_ShopStatus.prototype.drawPossession = function(x, y) {
     Yanfly.Item.Window_ShopStatus_drawPossession.call(this, x, y);
 };
 
-//追加：ここをいじればショップ時の能力変化を書ける 
 Window_ShopStatus.prototype.drawIndependentPossession = function(x, y) {
     var width = this.contents.width - this.textPadding() - x;
     var baseItem = DataManager.getBaseItem(this._item);
@@ -1416,7 +1409,7 @@ Window_ItemCategory.prototype.itemTextAlign = function() {
 Yanfly.Item.Window_ItemList_initialize = Window_ItemList.prototype.initialize;
 Window_ItemList.prototype.initialize = function(x, y, width, height) {
     if (SceneManager._scene instanceof Scene_Item) {
-      width = Graphics.boxWidth; //追加…1/2を削除 / 2;
+      width = Graphics.boxWidth / 2;
     }
     Yanfly.Item.Window_ItemList_initialize.call(this, x, y, width, height);
 };
@@ -1541,9 +1534,7 @@ Window_ItemStatus.prototype.drawItemIcon = function() {
     this.drawLargeIcon();
 };
 
-//追加：firefoxで動作しないため例外処理
 Window_ItemStatus.prototype.drawLargeIcon = function() {
-  if (window.navigator.userAgent.toLowerCase().indexOf('Firefox') == -1) {
     var iconIndex = this._item.iconIndex;
     var bitmap = ImageManager.loadSystem('IconSet');
     var pw = Window_Base._iconWidth;
@@ -1557,7 +1548,6 @@ Window_ItemStatus.prototype.drawLargeIcon = function() {
     this.contents._context.imageSmoothingEnabled = false;
     this.contents.blt(bitmap, sx, sy, pw, ph, dx, dy, dw, dh);
     this.contents._context.imageSmoothingEnabled = true;
-  }
 };
  
 Window_ItemStatus.prototype.drawEquipInfo = function(item) {
@@ -1855,7 +1845,7 @@ Window_ItemActionCommand.prototype.initialize = function(x, y) {
 };
  
 Window_ItemActionCommand.prototype.windowWidth = function() {
-    return Graphics.boxWidth; //追加：1/2を削除
+    return Graphics.boxWidth / 2;
 };
  
 Window_ItemActionCommand.prototype.setItem = function(item) {
