@@ -69,7 +69,6 @@
     Game_Interpreter.prototype.update = function() {
         _Game_Interpreter_update.apply(this, arguments);
         if ($gameMessage.isChoice() && !$gameMessage._choiceCallback) {
-            alert('aaaa');
             $gameMessage.setChoiceCallback(function(n) {
                 this._branch[this._indent] = n;
             }.bind(this));

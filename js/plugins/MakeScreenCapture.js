@@ -6,6 +6,7 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.4 2016/03/31 画像の出力先を絶対パスで指定できるよう修正
 // 1.1.3 2016/03/15 文章のスクロール表示が正しくキャプチャできない問題を修正
 // 1.1.2 2016/03/01 pngとjpegの形式ごとのファンクションキーを割り当てるよう修正
 // 1.1.1 2016/02/26 PrintScreenでもキャプチャできるように修正
@@ -79,6 +80,10 @@
  * キャプチャピクチャの表示状態はセーブできません。
  * セーブされる前に「ピクチャの消去」で消去してください。
  *
+ * 注意！
+ * キャプチャを出力する機能はローカル環境でのみ有効です。
+ * ブラウザやスマホ上では動作しません。
+ *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
  *  （パラメータの間は半角スペースで区切る）
@@ -116,8 +121,8 @@
         signature: {size:28, face:'GameFont', color:'rgba(255,255,255,1.0)', align:'right'},
         /* 効果音情報です。ファイル名はプラグイン管理画面から取得します */
         se: {volume:90, pitch:100, pan:0},
-        /* ファイルの出力場所です */
-        location:'/captures/',
+        /* ファイルの出力場所です(区切りは「/」で指定してください) */
+        location:'/captures',
         /* jpeg形式で出力したときの品質です(0.1...1.0) */
         jpegQuality:0.9,
         /* テストプレー以外での動作を無効にするフラグです */
@@ -427,10 +432,15 @@
     };
 
     StorageManager.localImgFileDirectoryPath = function() {
-        var path = window.location.pathname.replace(/(\/www|)\/[^\/]*$/, settings.location);
-        if (path.match(/^\/([A-Z]\:)/)) {
-            path = path.slice(1);
+        var path = settings.location;
+        alert(path);
+        if (!path.match(/^[A-Z]\:/)) {
+            path = window.location.pathname.replace(/(\/www|)\/[^\/]*$/, path);
+            if (path.match(/^\/([A-Z]\:)/)) {
+                path = path.slice(1);
+            }
         }
+        if (!path.match(/\/$/)) path += '/';
         return decodeURIComponent(path);
     };
 

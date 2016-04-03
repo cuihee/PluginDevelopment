@@ -6,7 +6,9 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
-// 1.0.0 2016/03/10 初版
+// 1.0.2 2016/03/31 隊列歩行でない場合のフォロワーや画像が指定されていないイベントでも影が表示される不具合を修正
+// 1.0.1 2016/03/31 浮遊中に強制的に待機アニメが設定される仕様を撤廃
+// 1.0.0 2016/03/29 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
 // [Twitter]: https://twitter.com/triacontane/
@@ -131,11 +133,6 @@
         return _Game_CharacterBase_screenY.apply(this, arguments) - this.screenY();
     };
 
-    var _Game_CharacterBase_screenZ = Game_CharacterBase.prototype.screenZ;
-    Game_CharacterBase.prototype.screenZ = function() {
-        return Math.min(_Game_CharacterBase_screenZ.apply(this, arguments) + (this.isFloating() ? 1 : 0), 5);
-    };
-
     var _Game_CharacterBase_isOnLadder = Game_CharacterBase.prototype.isOnLadder;
     Game_CharacterBase.prototype.isOnLadder = function() {
         return this.isFloating() ? false : _Game_CharacterBase_isOnLadder.apply(this, arguments);
@@ -159,6 +156,10 @@
         return this._altitude > 0;
     };
 
+    Game_CharacterBase.prototype.isShadowVisible = function() {
+        return this.isFloating() && (this._characterName || this._tileId);
+    };
+
     Game_CharacterBase.prototype.isNeedFloat = function() {
         return this._needFloat;
     };
@@ -167,7 +168,7 @@
         if (!max) max = $gameMap.tileHeight() / 2;
         this._needFloat   = true;
         this._maxAltitude = max;
-        if (waitFlg) this._waitCount = this.maxAltitude();
+        if (waitFlg) this._waitCount = Math.max(this.maxAltitude() - this._altitude, 0);
     };
 
     Game_Player.prototype.float = function(max) {
@@ -181,6 +182,10 @@
     Game_CharacterBase.prototype.landing = function(waitFlg) {
         this._needFloat = false;
         if (waitFlg) this._waitCount = this.maxAltitude();
+    };
+
+    Game_CharacterBase.prototype.landingIfOk = function(waitFlg) {
+        if ($gameMap.isAirshipLandOk(this.x, this.y)) this.landing(waitFlg);
     };
 
     Game_Player.prototype.landing = function() {
@@ -199,17 +204,12 @@
     Game_CharacterBase.prototype.updateFloating = function() {
         this._floatingPrev = this.isFloating();
         if (this.isNeedFloat()) {
-            if (this.isLowest()) {
-                this._stepAnimePrev = this._stepAnime;
-            }
             if (this.isHighest()) {
                 this._altitudeAnimeCount++;
-                this.setStepAnime(true);
             }
             this._altitude = Math.min(this._altitude + 1, this.maxAltitude());
         } else {
             if (this.isHighest()) {
-                this.setStepAnime(this._stepAnimePrev);
                 this._altitudeAnimeCount = 0;
             }
             this._altitude = Math.max(this._altitude - 1, 0);
@@ -241,11 +241,10 @@
     };
 
     Sprite_Character.prototype.updateFloating = function() {
-        if (this._character.isFloating()) {
+        if (this._character.isShadowVisible()) {
             if (!this._shadowSprite) this.createShadow();
             this._shadowSprite.y = this._character.screenShadowY();
             this._shadowSprite.opacity = this._character.shadowOpacity();
-            this._shadowSprite.visible = this.visible;
         } else {
             if (this._shadowSprite) this.disposeShadow();
         }
