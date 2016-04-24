@@ -154,12 +154,17 @@ var $dataMaterials = null;
         var filePathInfo = DataManager.materialFilePaths.shift();
         if (filePathInfo) {
             var loadHandler = this.loadHandlers[filePathInfo[0]];
-            if (loadHandler) {
-                console.log(filePathInfo[1]);
-                var bitmap = this[loadHandler](filePathInfo[1], 0);
-                if (!bitmap.isReady()) {
-                    localIntervalCount = paramLoadInterval;
-                }
+            if (!loadHandler) return;
+            console.log(filePathInfo[1]);
+            var bitmap = this[loadHandler](filePathInfo[1], 0);
+            if (bitmap.isReady()) return;
+            if (Utils.isNwjs()) {
+                localIntervalCount = paramLoadInterval;
+            } else {
+                localIntervalCount = Infinity;
+                bitmap.addLoadListener(function () {
+                    localIntervalCount = 0;
+                }.bind(this));
             }
         } else {
             localLoadComplete = true;
