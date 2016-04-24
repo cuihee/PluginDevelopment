@@ -62,7 +62,7 @@
     //=============================================================================
     var getParamString = function(paramNames) {
         var value = getParamOther(paramNames);
-        return value == null ? '' : value;
+        return value === null ? '' : value;
     };
 
     var getParamNumber = function(paramNames, min, max) {
@@ -78,7 +78,7 @@
 
     var getParamBoolean = function(paramNames) {
         var value = getParamOther(paramNames);
-        return (value || '').toUpperCase() == 'ON';
+        return (value || '').toUpperCase() === 'ON';
     };
 
     var getParamOther = function(paramNames) {
@@ -100,7 +100,13 @@
         var values = getParamArrayString(paramNames);
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
-        for (var i = 0; i < values.length; i++) values[i] = (parseInt(values[i], 10) || 0).clamp(min, max);
+        for (var i = 0; i < values.length; i++) {
+            if (!isNaN(parseInt(values[i], 10))) {
+                values[i] = (parseInt(values[i], 10) || 0).clamp(min, max);
+            } else {
+                values.splice(i--, 1);
+            }
+        }
         return values;
     };
 
@@ -123,23 +129,32 @@
     };
 
     var getArgString = function (arg, upperFlg) {
-        arg = convertEscapeCharactersAndEval(arg);
+        arg = convertEscapeCharactersAndEval(arg, false);
         return upperFlg ? arg.toUpperCase() : arg;
     };
 
     var getArgNumber = function (arg, min, max) {
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
-        return (parseInt(convertEscapeCharactersAndEval(arg), 10) || 0).clamp(min, max);
+        return (parseInt(convertEscapeCharactersAndEval(arg, true), 10) || 0).clamp(min, max);
     };
 
     var getArgBoolean = function(arg) {
-        return (arg || '').toUpperCase() == 'ON';
+        return (arg || '').toUpperCase() === 'ON';
     };
 
     var getMetaValue = function(object, name) {
         var metaTagName = metaTagPrefix + (name ? name : '');
         return object.meta.hasOwnProperty(metaTagName) ? object.meta[metaTagName] : undefined;
+    };
+
+    var getMetaValues = function(object, names) {
+        if (!Array.isArray(names)) return getMetaValue(object, names);
+        for (var i = 0, n = names.length; i < n; i++) {
+            var value = getMetaValue(object, names[i]);
+            if (value !== undefined) return value;
+        }
+        return undefined;
     };
 
     var parseIntStrict = function(value, errorMessage) {
@@ -148,10 +163,17 @@
         return result;
     };
 
-    var convertEscapeCharactersAndEval = function(text) {
-        if (text === null || text === undefined) text = '';
+    var convertEscapeCharactersAndEval = function(text, evalFlg) {
+        if (text === null || text === undefined) {
+            text = evalFlg ? '0' : '';
+        }
         var window = SceneManager._scene._windowLayer.children[0];
-        return window ? eval(window.convertEscapeCharacters(text)) : text;
+        if (window) {
+            var result = window.convertEscapeCharacters(text);
+            return evalFlg ? eval(result) : result;
+        } else {
+            return text;
+        }
     };
 
     var checkTypeNumber = function(value) {
@@ -197,7 +219,7 @@
     };
 
     //=============================================================================
-    // パラメータの取得とバリデーション
+    // パラメータの取得と整形
     //=============================================================================
     var paramParamName = getParamString(['ParamName', 'パラメータ名']);
 

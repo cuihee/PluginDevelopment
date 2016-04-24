@@ -1847,7 +1847,7 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'width', {
         return this.scale.x * this.getLocalBounds().width;
     },
     set: function(value) {
-/*
+        
         var width = this.getLocalBounds().width;
 
         if(width !== 0)
@@ -1858,7 +1858,7 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'width', {
         {
             this.scale.x = 1;
         }
-*/
+
         
         this._width = value;
     }
@@ -1872,7 +1872,7 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'width', {
  */
 Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'height', {
     get: function() {
-        return this.scale.y * this.getLocalBounds().height;
+        return  this.scale.y * this.getLocalBounds().height;
     },
     set: function(value) {
 

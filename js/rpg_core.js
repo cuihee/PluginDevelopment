@@ -1,5 +1,5 @@
 //=============================================================================
-// rpg_core.js v1.1.0
+// rpg_core.js v1.2.0
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ Array.prototype.clone = function() {
  * Checks whether the array contains a given element.
  *
  * @method Array.prototype.contains
- * @param {Object} element The element to search for
+ * @param {Any} element The element to search for
  * @return {Boolean} True if the array contains a given element
  */
 Array.prototype.contains = function(element) {
@@ -171,7 +171,7 @@ Utils.RPGMAKER_NAME = 'MV';
  * @type String
  * @final
  */
-Utils.RPGMAKER_VERSION = "1.1.0";
+Utils.RPGMAKER_VERSION = "1.2.0";
 
 /**
  * Checks whether the option is in the query string.
@@ -710,7 +710,7 @@ Bitmap.prototype.getPixel = function(x, y) {
  * @method getAlphaPixel
  * @param {Number} x The x coordinate of the pixel in the bitmap
  * @param {Number} y The y coordinate of the pixel in the bitmap
- * @return {Number} The alpha value
+ * @return {String} The alpha value
  */
 Bitmap.prototype.getAlphaPixel = function(x, y) {
     var data = this._context.getImageData(x, y, 1, 1).data;
@@ -4750,6 +4750,15 @@ Object.defineProperty(TilingSprite.prototype, 'opacity', {
     },
     configurable: true
 });
+
+TilingSprite.prototype.generateTilingTexture = function(arg) {
+    PIXI.TilingSprite.prototype.generateTilingTexture.call(this, arg);
+    // Purge from Pixi's Cache
+    if (Graphics.isWebGL()) {
+        if (this.tilingTexture.canvasBuffer)
+            PIXI.Texture.removeTextureFromCache(this.tilingTexture.canvasBuffer.canvas._pixiId);
+    }
+};
 
 /**
  * Updates the tiling sprite for each frame.

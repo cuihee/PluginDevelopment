@@ -6,6 +6,9 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.2.0 2018/04/23 署名に任意の画像ファイルを利用できるようになりました。
+//                  細部のリファクタリング
+// 1.1.5 2016/04/10 画像の出力先を管理画面のパラメータとして設定できるよう修正
 // 1.1.4 2016/03/31 画像の出力先を絶対パスで指定できるよう修正
 // 1.1.3 2016/03/15 文章のスクロール表示が正しくキャプチャできない問題を修正
 // 1.1.2 2016/03/01 pngとjpegの形式ごとのファンクションキーを割り当てるよう修正
@@ -38,8 +41,13 @@
  * プラグインコマンドから実行した場合は参照されません。
  * @default image
  *
+ * @param 出力場所
+ * @desc ファイルの出力パスです。相対パス、絶対パスが利用できます。
+ * 区切り文字は「/」もしくは「\」で指定してください。
+ * @default /captures
+ *
  * @param 保存形式
- * @desc 画像の保存形式です。(png/jpeg)
+ * @desc 画像のデフォルト保存形式です。(png/jpeg)
  * @default png
  *
  * @param 連番桁数
@@ -53,6 +61,17 @@
  * @param 署名
  * @desc 保存時に画像の右下に書き込まれる署名です。
  * @default
+ *
+ * @param 署名サイズ
+ * @desc 署名のフォントサイズです。
+ * @default 22
+ *
+ * @param 署名画像
+ * @desc 保存時に画像の右下に書き込まれる著名画像ファイル名です。「img/pictures」に配置。拡張子不要。
+ * @default
+ * @require 1
+ * @dir img/pictures/
+ * @type file
  *
  * @param 実行間隔
  * @desc キャプチャを定期実行する間隔（秒単位）です。
@@ -75,6 +94,10 @@
  * ・プラグインコマンド実行時
  *
  * プラグインコマンド以外は、テストプレー時のみ有効になります。
+ *
+ * キャプチャの際に著名を自動で埋め込むことができます。
+ * 著名は文字列で指定できるほか、任意の画像も指定可能です。
+ * （両方指定すると画像が優先されます）
  *
  * 注意！
  * キャプチャピクチャの表示状態はセーブできません。
@@ -118,11 +141,9 @@
     //=============================================================================
     var settings = {
         /* 署名のフォント情報です。faceはあらかじめフォントをロードしておかなければ使えません */
-        signature: {size:28, face:'GameFont', color:'rgba(255,255,255,1.0)', align:'right'},
+        signature: {face:'GameFont', color:'rgba(255,255,255,1.0)', align:'right'},
         /* 効果音情報です。ファイル名はプラグイン管理画面から取得します */
         se: {volume:90, pitch:100, pan:0},
-        /* ファイルの出力場所です(区切りは「/」で指定してください) */
-        location:'/captures',
         /* jpeg形式で出力したときの品質です(0.1...1.0) */
         jpegQuality:0.9,
         /* テストプレー以外での動作を無効にするフラグです */
@@ -147,7 +168,7 @@
 
     var getParamBoolean = function(paramNames) {
         var value = getParamOther(paramNames);
-        return (value || '').toUpperCase() == 'ON';
+        return (value || '').toUpperCase() === 'ON';
     };
 
     var getParamOther = function(paramNames) {
@@ -174,11 +195,17 @@
         return window ? window.convertEscapeCharacters(text) : text;
     };
 
+    //=============================================================================
+    // パラメータの取得と整形
+    //=============================================================================
     var paramFuncKeyPngCapture  = getParamString(['FuncKeyPngCapture', 'PNGキャプチャキー']);
     var paramFuncKeyJpegCapture = getParamString(['FuncKeyJpegCapture', 'JPEGキャプチャキー']);
     var paramFileName           = getParamString(['FileName', 'ファイル名']);
+    var paramLocation           = getParamString(['Location', '出力場所']);
     var paramFileFormat         = getParamString(['FileFormat', '保存形式']).toLowerCase();
     var paramSignature          = getParamString(['Signature', '署名']);
+    var paramSignatureImage     = getParamString(['SignatureImage', '署名画像']);
+    var paramSignatureSize      = getParamNumber(['SignatureSize', '署名サイズ']);
     var paramNumberDigit        = getParamNumber(['NumberDigit', '連番桁数']);
     var paramInterval           = getParamNumber(['Interval', '実行間隔']);
     var paramSeName             = getParamString(['SeName', '効果音']);
@@ -316,8 +343,8 @@
     // Bitmap
     //  対象のビットマップを保存します。現状、ローカル環境下でのみ動作します。
     //=============================================================================
-    Bitmap.prototype.save = function(fileName, format, quality) {
-        var data = this._canvas.toDataURL('image/' + format, quality);
+    Bitmap.prototype.save = function(fileName, format, extend) {
+        var data = this._canvas.toDataURL('image/' + format, extend);
         data = data.replace(/^.*,/, '');
         if (data) StorageManager.saveImg(fileName, format, data);
     };
@@ -327,6 +354,19 @@
         this.fontSize  = fontInfo.size;
         this.textColor = fontInfo.color;
         this.drawText(text, 8, this.height - this.fontSize - 8, this.width - 8 * 2, this.fontSize, fontInfo.align);
+    };
+
+    Bitmap.prototype.signImage = function(signBitmap, fontInfo) {
+        var dx = 0, dy = this.height - signBitmap.height;
+        switch (fontInfo.align) {
+            case 'center':
+                dx = this.width / 2 - signBitmap.width / 2;
+                break;
+            case 'right':
+                dx = this.width - signBitmap.width;
+                break;
+        }
+        this.blt(signBitmap, 0, 0, signBitmap.width, signBitmap.height, dx, dy);
     };
 
     //=============================================================================
@@ -369,10 +409,20 @@
     };
 
     SceneManager.saveCapture = function(fileName, format) {
+        var signature = settings.signature;
         if (this._captureBitmap) {
-            if (!format) format = (paramFileFormat === 'png' ? 'png' : 'jpeg');
-            this._captureBitmap.sign(paramSignature, settings.signature);
-            this._captureBitmap.save(StorageManager.getLocalImgFileName(fileName), format, settings.jpegQuality);
+            signature.size = paramSignatureSize;
+            var fileFullName = StorageManager.getLocalImgFileName(fileName);
+            if (paramSignatureImage) {
+                var image = ImageManager.loadPicture(paramSignatureImage, 0);
+                image.addLoadListener(function () {
+                    this._captureBitmap.signImage(image, signature);
+                    this._captureBitmap.save(fileFullName, format, settings.jpegQuality);
+                }.bind(this));
+            } else {
+                this._captureBitmap.sign(paramSignature, signature);
+                this._captureBitmap.save(fileFullName, format, settings.jpegQuality);
+            }
         }
     };
 
@@ -384,25 +434,33 @@
     var _SceneManager_setupErrorHandlers = SceneManager.setupErrorHandlers;
     SceneManager.setupErrorHandlers = function() {
         _SceneManager_setupErrorHandlers.apply(this, arguments);
-        document.addEventListener('keyup', this.onKeyUpForCapture.bind(this));
+        if (Utils.isTestCapture()) {
+            document.addEventListener('keyup', this.onKeyUpForCapture.bind(this));
+        }
     };
 
     var _SceneManager_onKeyDown = SceneManager.onKeyDown;
     SceneManager.onKeyDown = function(event) {
+        _SceneManager_onKeyDown.apply(this, arguments);
+        if (Utils.isTestCapture()) {
+            this.onKeyDownForCapture(event);
+        }
+    };
+
+    SceneManager.onKeyDownForCapture = function(event) {
         switch (event.keyCode) {
             case Input.functionReverseMapper[paramFuncKeyPngCapture] :
-                if (Utils.isTestCapture()) SceneManager.takeCapture('png');
+                SceneManager.takeCapture('png');
                 break;
             case Input.functionReverseMapper[paramFuncKeyJpegCapture] :
-                if (Utils.isTestCapture()) SceneManager.takeCapture('jpeg');
+                SceneManager.takeCapture('jpeg');
                 break;
         }
-        _SceneManager_onKeyDown.apply(this, arguments);
     };
 
     SceneManager.onKeyUpForCapture = function(event) {
         // PrintScreen
-        if (event.keyCode === 44 && Utils.isTestCapture()) SceneManager.takeCapture();
+        if (event.keyCode === 44) SceneManager.takeCapture(paramFileFormat);
     };
 
     //=============================================================================
@@ -411,7 +469,7 @@
     //=============================================================================
     StorageManager.saveImg = function(fileName, format, data) {
         if (this.isLocalMode()) {
-            this.saveImgToLocalFile(fileName + (format === 'png' ? '.png' : '.jpeg'), data);
+            this.saveImgToLocalFile(fileName + '.' + format, data);
         } else {
             this.saveImgToWebStorage(fileName, data);
         }
@@ -432,8 +490,7 @@
     };
 
     StorageManager.localImgFileDirectoryPath = function() {
-        var path = settings.location;
-        alert(path);
+        var path = paramLocation;
         if (!path.match(/^[A-Z]\:/)) {
             path = window.location.pathname.replace(/(\/www|)\/[^\/]*$/, path);
             if (path.match(/^\/([A-Z]\:)/)) {
@@ -447,7 +504,7 @@
     StorageManager.getLocalImgFileName = function(fileName) {
         if (paramTimeStamp) {
             var date = new Date();
-            return fileName + '_' + date.getFullYear() + (date.getMonth() + 1).padZero(2) + date.getDate() +
+            return fileName + '_' + date.getFullYear() + (date.getMonth() + 1).padZero(2) + date.getDate().padZero(2) +
                     '_' + date.getHours().padZero(2) + date.getMinutes().padZero(2) + date.getSeconds().padZero(2);
         } else {
             var number = SceneManager.captureNumber;
