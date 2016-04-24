@@ -32,5 +32,6 @@ var $plugins =
 {"name":"MessageWindowPopup","status":true,"description":"フキダシウィンドウプラグイン","parameters":{"フォントサイズ":"22","余白":"10","自動設定":"ON","フェイス倍率":"75","ウィンドウ連携":"ON","行間":"0","ウィンドウ透過":"ON"}},
 {"name":"CharacterPopupDamage","status":true,"description":"キャラクターのダメージポッププラグイン","parameters":{"効果音演奏":"ON","X座標補正":"-100","Y座標補正":"200"}},
 {"name":"SceneGlossary","status":true,"description":"ゲーム内用語辞典プラグイン","parameters":{"カテゴリ分類":"ON","コマンド名称":"用語辞典","コマンド名称2":"人物事典","コマンド名称3":"クエスト辞典","コマンド名称4":"ヘルプ","アイテムタイプ":"A","自動登録":"ON","フォントサイズ":"22","用語集リスト横幅":"240","ヘルプテキスト":"ゲーム中に登場する用語を解説しています。","ヘルプテキスト2":"カテゴリを選択してください。","アイテム使用":"ON","画像の自動縮小":"ON","画像の表示位置":"top","画像の揃え":"center","背景ピクチャ":"Ocean2"}},
-{"name":"ParallelPreload","status":true,"description":"並列プリロードプラグイン","parameters":{"素材一覧データ":"MV_Project","ロード間隔":"0"}}
+{"name":"ParallelPreload","status":true,"description":"並列プリロードプラグイン","parameters":{"素材一覧データ":"MV_Project","ロード間隔":"0"}},
+{"name":"CustomizeConfigItem","status":true,"description":"オプション任意項目作成プラグイン","parameters":{"スイッチ項目1":"スイッチ項目1:OFF:0:OFF","数値項目1":"数値項目1:0:0:OFF:0:10:1","音量項目1":"音量項目1:0:0:OFF","文字項目1":"文字項目1:0:0:OFF:EASY, NORMAL, HARD, VERY HARD","スイッチ項目2":"スイッチ項目2:OFF:0:OFF","数値項目2":"数値項目2:0:0:OFF:0:10:1","音量項目2":"音量項目2:0:0:OFF","文字項目2":"文字項目2:0:0:OFF:EASY, NORMAL, HARD, VERY HARD\r"}}
 ];
