@@ -16,7 +16,7 @@ var $plugins =
 {"name":"FarewellToArms","status":true,"description":"戦闘放棄プラグイン　～武器よさらば～","parameters":{"farewellCommand":"投降","farewellYes":"諦める","farewellNo":"諦めない","farewellDescription":"抵抗を止めて投降しますか？（敗北あつかいです）","farewellMessage":"%1は戦いを止めて投降した。"}},
 {"name":"YEP_MessageCore","status":true,"description":"v1.10 Adds more features to the Message Window to customized\nthe way your messages appear and functions.","parameters":{"---General---":"","Default Rows":"4","Default Width":"Graphics.boxWidth","Face Indent":"Window_Base._faceWidth + 24","Fast Forward Key":"pagedown","Enable Fast Forward":"true","Word Wrapping":"false","Description Wrap":"false","Word Wrap Space":"false","---Font---":"","Font Name":"GameFont","Font Size":"28","Font Size Change":"12","Font Changed Max":"96","Font Changed Min":"12","---Name Box---":"","Name Box Buffer X":"-28","Name Box Buffer Y":"0","Name Box Padding":"1","Name Box Color":"0","Name Box Clear":"false","Name Box Added Text":"\\c[6]"}},
 {"name":"chunkof_QueryParam","status":true,"description":"","parameters":{}},
-{"name":"SceneSoundTest","status":false,"description":"サウンドテストプラグイン","parameters":{"コマンド名称":"サウンドテスト","タイトルに追加":"OFF","メニューに追加":"ON","音量名称":"音量","ピッチ名称":"ピッチ","位相名称":"位相","背景ピクチャ":"","読込形式":"CSV"}},
+{"name":"SceneSoundTest","status":true,"description":"サウンドテストプラグイン","parameters":{"コマンド名称":"サウンドテスト","タイトルに追加":"OFF","メニューに追加":"ON","音量名称":"音量","ピッチ名称":"ピッチ","位相名称":"位相","背景ピクチャ":"","読込形式":"CSV"}},
 {"name":"BatchProcessManager","status":true,"description":"バッチ処理プラグイン","parameters":{}},
 {"name":"AnotherNewGame","status":true,"description":"アナザーニューゲーム追加プラグイン","parameters":{"name":"？？？","map_id":"13","map_x":"9","map_y":"7","hidden":"OFF","disable":"OFF","file_load":"ON"}},
 {"name":"Chronus","status":true,"description":"ゲーム内時間の導入プラグイン","parameters":{"月ごとの日数配列":"31,28,31,30,31,30,31,31,30,31,30,31","曜日配列":"(日),(月),(火),(水),(木),(金),(土)","自然時間加算":"5","場所移動時間加算":"30","戦闘時間加算(固定)":"30","戦闘時間加算(ターン)":"5","年のゲーム変数":"8","月のゲーム変数":"9","日のゲーム変数":"10","曜日IDのゲーム変数":"13","曜日名のゲーム変数":"14","時のゲーム変数":"11","分のゲーム変数":"","時間帯IDのゲーム変数":"16","天候IDのゲーム変数":"17","日時フォーマット1":"YYYY年 MM月 DD日 DY","日時フォーマット2":"AMHH時 MI分","カレンダー表示X座標":"8","カレンダー表示Y座標":"8","文字盤画像ファイル":"clock_dial","長針画像ファイル":"clock_minute_hand","短針画像ファイル":"clock_hour_hand","時計X座標":"84","時計Y座標":"156"}},
@@ -27,10 +27,10 @@ var $plugins =
 {"name":"CharacterGraphicExtend","status":true,"description":"キャラクターグラフィック表示拡張プラグイン","parameters":{"イベント消去無効":"ON"}},
 {"name":"StartUpFullScreen","status":true,"description":"フルスクリーンで起動プラグイン","parameters":{"シャットダウン":"シャットダウン","フルスクリーンで起動":"フルスクリーンで起動"}},
 {"name":"FloatingCharacter","status":true,"description":"キャラクターの浮遊プラグイン","parameters":{"通行可能地形タグ":"1,aaa,2,5gg,","通行可能リージョン":"1,","高度通行地形タグ":"0,4,5","高度通行リージョン":"","高度敷居値":"48"}},
-{"name":"GraphicalDesignMode","status":true,"description":"GUI画面デザインプラグイン　\r\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"デザインモード":"OFF","自動保存":"OFF","モバイル版作成":"ON","モバイル偽装":"OFF","ウィンドウ透過":"ON","グリッドサイズ":"48","パディング":"","フォントサイズ":"","行の高さ":"","背景透明度":""}},
+{"name":"GraphicalDesignMode","status":true,"description":"GUI画面デザインプラグイン\r\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"デザインモード":"OFF","自動保存":"OFF","モバイル版作成":"OFF","モバイル偽装":"OFF","ウィンドウ透過":"ON","グリッドサイズ":"48","パディング":"","フォントサイズ":"","行の高さ":"","背景透明度":""}},
 {"name":"PictureAnimation","status":true,"description":"ピクチャのアニメーションプラグイン","parameters":{}},
 {"name":"MessageWindowPopup","status":true,"description":"フキダシウィンドウプラグイン","parameters":{"フォントサイズ":"22","余白":"10","自動設定":"ON","フェイス倍率":"75","ウィンドウ連携":"ON","行間":"0","ウィンドウ透過":"ON"}},
 {"name":"CharacterPopupDamage","status":true,"description":"キャラクターのダメージポッププラグイン","parameters":{"効果音演奏":"ON","X座標補正":"-100","Y座標補正":"200"}},
 {"name":"SceneGlossary","status":true,"description":"ゲーム内用語辞典プラグイン","parameters":{"カテゴリ分類":"ON","コマンド名称":"用語辞典","コマンド名称2":"人物事典","コマンド名称3":"クエスト辞典","コマンド名称4":"ヘルプ","アイテムタイプ":"A","自動登録":"ON","フォントサイズ":"22","用語集リスト横幅":"240","ヘルプテキスト":"ゲーム中に登場する用語を解説しています。","ヘルプテキスト2":"カテゴリを選択してください。","アイテム使用":"ON","画像の自動縮小":"ON","画像の表示位置":"top","画像の揃え":"center","背景ピクチャ":"Ocean2"}},
-{"name":"ParallelPreload","status":false,"description":"並列プリロードプラグイン","parameters":{"素材一覧データ":"MV_Project","ロード間隔":"10"}}
+{"name":"ParallelPreload","status":true,"description":"並列プリロードプラグイン","parameters":{"素材一覧データ":"MV_Project","ロード間隔":"0"}}
 ];
