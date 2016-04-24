@@ -24,7 +24,7 @@
  * @param ロード間隔
  * @desc ファイルをロードする間隔(フレーム単位)です。
  * 0に指定すると、全てロードしてからゲーム開始します。
- * @default 1
+ * @default 0
  *
  * @help ゲーム開始時に画像素材を並列ロードします。
  * 可能な限り負荷を分散、軽減するように設計されています。
@@ -42,10 +42,12 @@
  * ・本体
  * https://raw.githubusercontent.com/fftfantt/RPGMakerMV/master/JSON_Maker_for_MV.zip
  *
- * ブラウザから実行する場合「ロード間隔」のパラメータは無視され
- * 画像のロードが完了してから次の画像のロードを開始します。
+ * ブラウザから実行する場合、画像のロードが完了してから次のロードを開始します。
  * そのため、大量の画像を指定するとロード完了までに時間が掛かり
  * 効果が薄くなります。
+ *
+ * また、スマートフォン等メモリに限りがあるデバイスで実行する場合、
+ * 大量の画像のプリロードは動作不良の原因となります。
  *
  * 注意！
  * 本プラグインは画像のロードしか行いません。
@@ -103,9 +105,14 @@ var $dataMaterials = null;
     var localLoadComplete     = false;
     var localIntervalCount    = 0;
 
+    //=============================================================================
+    // DataManager
+    //  ロード対象素材スタックの作成を追加定義します。
+    //=============================================================================
     DataManager._databaseFiles.push(
         {name: '$dataMaterials', src: paramMaterialListData + '.json'}
     );
+    DataManager.materialFilePaths = [];
 
     var _DataManager_onLoad = DataManager.onLoad;
     DataManager.onLoad = function(object) {
@@ -115,8 +122,6 @@ var $dataMaterials = null;
         }
     };
 
-    DataManager.materialFilePaths = [];
-
     DataManager.initParallelPreload = function() {
         $dataMaterials.iterate(function (key, value) {
             for (var i = 0, n = value.length; i < n; i++) {
@@ -125,6 +130,10 @@ var $dataMaterials = null;
         }.bind(this));
     };
 
+    //=============================================================================
+    // Scene_Base
+    //  ロード処理を実行します。
+    //=============================================================================
     var _Scene_Base_update = Scene_Base.prototype.update;
     Scene_Base.prototype.update = function() {
         _Scene_Base_update.apply(this, arguments);
@@ -138,6 +147,10 @@ var $dataMaterials = null;
         localIntervalCount--;
     };
 
+    //=============================================================================
+    // ImageManager
+    //  ロード処理を実行します。
+    //=============================================================================
     ImageManager.loadHandlers = {
         animations   : 'loadAnimation',
         battlebacks1 : 'loadBattleback1',
@@ -160,7 +173,9 @@ var $dataMaterials = null;
         if (filePathInfo) {
             var loadHandler = this.loadHandlers[filePathInfo[0]];
             if (!loadHandler) return;
-            console.log(filePathInfo[1]);
+            if (Utils.isOptionValid('test')) {
+                console.log('Loaded:' + filePathInfo[0] + '/' + filePathInfo[1]);
+            }
             var bitmap = this[loadHandler](filePathInfo[1], 0);
             if (bitmap.isReady()) return;
             if (Utils.isNwjs()) {
@@ -176,6 +191,10 @@ var $dataMaterials = null;
         }
     };
 
+    //=============================================================================
+    // Bitmap
+    //  ロードと描画のタイミングを分離します。
+    //=============================================================================
     Bitmap.prototype._onLoad = function() {
         this._isLoading = false;
         this._isDraw = false;
@@ -195,22 +214,30 @@ var $dataMaterials = null;
         }
     };
 
+    var _Bitmap_blt = Bitmap.prototype.blt;
+    Bitmap.prototype.blt = function(source, sx, sy, sw, sh, dx, dy, dw, dh) {
+        source.drawImageIfNeed();
+        _Bitmap_blt.apply(this, arguments);
+    };
+
+    //=============================================================================
+    // Sprite
+    //  Bitmapのロード完了時に描画処理を実行します。
+    //=============================================================================
     var _Sprite__onBitmapLoad = Sprite.prototype._onBitmapLoad;
     Sprite.prototype._onBitmapLoad = function() {
         if (this._bitmap) this._bitmap.drawImageIfNeed();
         _Sprite__onBitmapLoad.apply(this, arguments);
     };
 
+    //=============================================================================
+    // TilingSprite
+    //  Bitmapのロード完了時に描画処理を実行します。
+    //=============================================================================
     var _TilingSprite__onBitmapLoad = TilingSprite.prototype._onBitmapLoad;
     TilingSprite.prototype._onBitmapLoad = function() {
         if (this._bitmap) this._bitmap.drawImageIfNeed();
         _TilingSprite__onBitmapLoad.apply(this, arguments);
-    };
-
-    var _Bitmap_blt = Bitmap.prototype.blt;
-    Bitmap.prototype.blt = function(source, sx, sy, sw, sh, dx, dy, dw, dh) {
-        source.drawImageIfNeed();
-        _Bitmap_blt.apply(this, arguments);
     };
 })();
 
