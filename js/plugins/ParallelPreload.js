@@ -27,7 +27,7 @@
  * @default 1
  *
  * @help ゲーム開始時に画像素材を並列ロードします。
- * 可能な限り負荷を分散するように設計されています。
+ * 可能な限り負荷を分散、軽減するように設計されています。
  *
  * ロードする素材の一覧はfftfantt氏制作の「素材一覧用JSON作成プログラム」を
  * 使用してください。
@@ -41,6 +41,11 @@
  *
  * ・本体
  * https://raw.githubusercontent.com/fftfantt/RPGMakerMV/master/JSON_Maker_for_MV.zip
+ *
+ * ブラウザから実行する場合「ロード間隔」のパラメータは無視され
+ * 画像のロードが完了してから次の画像のロードを開始します。
+ * そのため、大量の画像を指定するとロード完了までに時間が掛かり
+ * 効果が薄くなります。
  *
  * 注意！
  * 本プラグインは画像のロードしか行いません。
@@ -106,13 +111,13 @@ var $dataMaterials = null;
     DataManager.onLoad = function(object) {
         _DataManager_onLoad.apply(this, arguments);
         if (object === $dataMaterials) {
-            this.initLagPreload();
+            this.initParallelPreload();
         }
     };
 
     DataManager.materialFilePaths = [];
 
-    DataManager.initLagPreload = function() {
+    DataManager.initParallelPreload = function() {
         $dataMaterials.iterate(function (key, value) {
             for (var i = 0, n = value.length; i < n; i++) {
                 this.materialFilePaths.push([key, value[i]]);
@@ -123,10 +128,10 @@ var $dataMaterials = null;
     var _Scene_Base_update = Scene_Base.prototype.update;
     Scene_Base.prototype.update = function() {
         _Scene_Base_update.apply(this, arguments);
-        if (!localLoadComplete) this.updateLagPreload();
+        if (!localLoadComplete) this.updateParallelPreload();
     };
 
-    Scene_Base.prototype.updateLagPreload = function() {
+    Scene_Base.prototype.updateParallelPreload = function() {
         while (localIntervalCount <= 0 && !localLoadComplete) {
             ImageManager.loadMaterial();
         }
@@ -163,7 +168,7 @@ var $dataMaterials = null;
             } else {
                 localIntervalCount = Infinity;
                 bitmap.addLoadListener(function () {
-                    localIntervalCount = 0;
+                    localIntervalCount = paramLoadInterval;
                 }.bind(this));
             }
         } else {
