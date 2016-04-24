@@ -212,6 +212,26 @@ var $dataMaterials = null;
         }
     };
 
+    var _ImageManager_loadNormalBitmap = ImageManager.loadNormalBitmap;
+    ImageManager.loadNormalBitmap = function(path, hue) {
+        var bitmap = _ImageManager_loadNormalBitmap.apply(this, arguments);
+        if (!bitmap.isReady()) bitmap._isNeedLagDraw = false;
+        return bitmap;
+    };
+
+    var _ImageManager_isReady = ImageManager.isReady;
+    ImageManager.isReady = function() {
+        var result = _ImageManager_isReady.apply(this, arguments);
+        if (result) return true;
+        for (var key in this._cache) {
+            var bitmap = this._cache[key];
+            if (!bitmap.isReady() && !bitmap._isNeedLagDraw) {
+                return false;
+            }
+        }
+        return true;
+    };
+
     //=============================================================================
     // Bitmap
     //  ロードと描画のタイミングを分離します。
