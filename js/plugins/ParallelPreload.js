@@ -33,6 +33,8 @@
  * 使用してください。
  * 同プログラムから必要な素材の一覧が作成されたJSONファイル
  * 「MV_Project.json」を作成して「/data」以下に配置します。
+ * 作成する際は、「拡張子をつける」およびオーディオ関連のチェックボックスを
+ * 外してください。
  *
  * ・使い方
  * https://github.com/fftfantt/RPGMakerMV/wiki/JSON_Maker_for_MV
@@ -91,9 +93,8 @@ var $dataMaterials = null;
     // パラメータの取得と整形
     //=============================================================================
     var paramMaterialListData = getParamString(['MaterialListData', '素材一覧データ']);
-    var paramLoadInterval     = getParamNumber(['LoadInterval', '素材一覧データ']);
+    var paramLoadInterval     = getParamNumber(['LoadInterval', 'ロード間隔']);
 
-    var localLastLoadMaterial = new Bitmap(1, 1);
     var localLoadComplete     = false;
     var localIntervalCount    = 0;
 
@@ -126,15 +127,10 @@ var $dataMaterials = null;
     };
 
     Scene_Base.prototype.updateLagPreload = function() {
-        if (!localLastLoadMaterial.isReady()) return;
-        if (localIntervalCount <= 0) {
-            while (localLastLoadMaterial) {
-                ImageManager.loadMaterial();
-                if (localIntervalCount > 0) break;
-            }
-        } else {
-            localIntervalCount--;
+        while (localIntervalCount <= 0 && !localLoadComplete) {
+            ImageManager.loadMaterial();
         }
+        localIntervalCount--;
     };
 
     ImageManager.loadHandlers = {
@@ -160,13 +156,12 @@ var $dataMaterials = null;
             var loadHandler = this.loadHandlers[filePathInfo[0]];
             if (loadHandler) {
                 console.log(filePathInfo[1]);
-                localLastLoadMaterial = this[loadHandler](filePathInfo[1], 0);
-                if (!localLastLoadMaterial.isReady()) {
+                var bitmap = this[loadHandler](filePathInfo[1], 0);
+                if (!bitmap.isReady()) {
                     localIntervalCount = paramLoadInterval;
                 }
             }
         } else {
-            localLastLoadMaterial = null;
             localLoadComplete = true;
         }
     };
@@ -185,7 +180,7 @@ var $dataMaterials = null;
     };
 
     Bitmap.prototype.drawImageIfNeed = function() {
-        if (this._image && !this._isDraw) {
+        if (this._image && this.isReady() && !this._isDraw) {
             this.drawImage();
         }
     };
