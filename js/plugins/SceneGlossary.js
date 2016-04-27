@@ -6,6 +6,7 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.3.1 2016/04/26 ピクチャ名を変数で指定できる機能を追加
 // 1.3.0 2016/04/23 用語の種別ごとに、複数の用語画面を作成できる機能を追加
 //                  用語をアイテムとして使用できる機能を追加
 // 1.2.1 2016/04/21 複数ページ送りをタッチ操作に対応
@@ -161,6 +162,14 @@
  * 「アイテム使用」のパラメータをONにすると、用語をアイテムとして使用できます。
  * 通常はOFFで問題ありませんが、使い方次第です。
  *
+ * 「YEP_MainMenuManager.js」と連携して、コマンドの表示制御を行うには
+ * 「コマンド名称」の項目を空にした上で「YEP_MainMenuManager.js」の
+ * パラメータを以下の通り設定してください。
+ *
+ * Menu X Name      : 'Glossary1'
+ * Menu X Symbol    : glossary1
+ * Menu X Main Bind : this.commandGlossary.bind(this, 1)
+ *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
  *  （パラメータの間は半角スペースで区切る）
@@ -315,6 +324,14 @@
  * 「アイテム使用」のパラメータをONにすると、用語をアイテムとして使用できます。
  * 通常はOFFで問題ありませんが、使い方次第です。
  *
+ * 「YEP_MainMenuManager.js」と連携して、コマンドの表示制御を行うには
+ * 「コマンド名称」の項目を空にした上で「YEP_MainMenuManager.js」の
+ * パラメータを以下の通り設定してください。
+ *
+ * Menu X Name      : '用語辞典1'
+ * Menu X Symbol    : glossary1
+ * Menu X Main Bind : this.commandGlossary.bind(this, 1)
+ *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
  *  （パラメータの間は半角スペースで区切る）
@@ -391,6 +408,11 @@ function Scene_Glossary() {
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
         return convertEscapeCharactersAndEval(arg, true).clamp(min, max);
+    };
+
+    var getArgString = function (arg, upperFlg) {
+        arg = convertEscapeCharactersAndEval(arg, false);
+        return upperFlg ? arg.toUpperCase() : arg;
     };
 
     var convertEscapeCharactersAndEval = function(text, evalFlg) {
@@ -911,7 +933,7 @@ function Scene_Glossary() {
         if (!this._itemData) return;
         var pictureName = getMetaValues(this._itemData, ['ピクチャ', 'Picture'], index);
         if (pictureName) {
-            var bitmap = ImageManager.loadPicture(pictureName, 0);
+            var bitmap = ImageManager.loadPicture(getArgString(pictureName), 0);
             bitmap.addLoadListener(this.drawItemSub.bind(this, bitmap));
         } else {
             this.drawItemSub(null);
