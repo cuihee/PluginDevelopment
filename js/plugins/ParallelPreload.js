@@ -31,6 +31,10 @@
  * @desc ファイルをロードする間隔(フレーム単位)です。0に指定すると全てロードしてからゲーム開始します。(ブラウザ時は除く)
  * @default 0
  *
+ * @param ログ出力
+ * @desc ロードしたファイルパスをログに出力します。(テストプレー時のみ)
+ * @default OFF
+ *
  * @help ゲーム開始時に画像素材を並列ロードします。
  * 可能な限り負荷を分散、軽減するように設計されています。
  *
@@ -91,6 +95,11 @@ var $dataMaterials = null;
         return (parseInt(value, 10) || 0).clamp(min, max);
     };
 
+    var getParamBoolean = function(paramNames) {
+        var value = getParamOther(paramNames);
+        return (value || '').toUpperCase() === 'ON';
+    };
+
     var getParamOther = function(paramNames) {
         if (!Array.isArray(paramNames)) paramNames = [paramNames];
         for (var i = 0; i < paramNames.length; i++) {
@@ -115,6 +124,7 @@ var $dataMaterials = null;
     //=============================================================================
     var paramMaterialListData = getParamString(['MaterialListData', '素材一覧データ']) + '.json';
     var paramLoadInterval     = getParamNumber(['LoadInterval', 'ロード間隔']);
+    var paramOutputLog        = getParamBoolean(['OutputLog', 'ログ出力']);
 
     var localLoadComplete     = false;
     var localIntervalCount    = 0;
@@ -156,7 +166,7 @@ var $dataMaterials = null;
     DataManager.loadMaterial = function() {
         var filePathInfo = this.materialFilePaths.shift();
         if (filePathInfo) {
-            if (Utils.isOptionValid('test')) {
+            if (Utils.isOptionValid('test') && paramOutputLog) {
                 console.log('Load material : ' + filePathInfo[0] + '/' + filePathInfo[1]);
             }
             var loadImageHandler = ImageManager.loadHandlers[filePathInfo[0]];
