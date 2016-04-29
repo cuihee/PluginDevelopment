@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.0 2016/04/28 音声素材の並列プリロードに対応
+//                  他のプラグインの影響等で、特定のシーンでプリロードが止まってしまう問題を修正
 // 1.0.1 2016/04/25 色相が0以外の画像がすべて0で表示されてしまう問題を修正
 //                  色相に関する制約の説明を追加
 //                  ブラウザプレー時、戦闘アニメの表示速度が著しく低下する問題を修正
@@ -33,11 +35,10 @@
  * 可能な限り負荷を分散、軽減するように設計されています。
  *
  * ロードする素材の一覧はfftfantt氏制作の「素材一覧用JSON作成プログラム」を
- * 使用してください。
+ * 使用してください。(2016/04/28時点でMITライセンス)
  * 同プログラムから必要な素材の一覧が作成されたJSONファイル
  * 「MV_Project.json」を作成して「/data」以下に配置します。
- * 作成する際は、「拡張子をつける」およびオーディオ関連のチェックボックスを
- * 外してください。
+ * 作成する際は、「拡張子をつける」チェックを外してください。
  *
  * ・使い方
  * https://github.com/fftfantt/RPGMakerMV/wiki/JSON_Maker_for_MV
@@ -63,10 +64,7 @@
  * ダウンロード時間なので、よほどのことがなければ色相の変更は不要です。
  *
  * 注意！
- * 本プラグインは画像のロードしか行いません。
- * 音声ファイルについては対象外となっています。
- *
- * また、このプラグインを適用したゲームをモバイルネットワークでプレーすると、
+ * このプラグインを適用したゲームをモバイルネットワークでプレーすると、
  * 通信量が膨大になる恐れがあります。必要に応じて注意喚起ください。
  *
  * 利用規約：
@@ -188,7 +186,7 @@ var $dataMaterials = null;
     };
 
     DataManager.loadAudio = function(loadHandler, filePathInfo) {
-        if (AudioManager.shouldUseHtml5Audio()) return;
+        if (AudioManager.shouldUseHtml5Audio() || Utils.isNwjs()) return;
         var audio = AudioManager[loadHandler](filePathInfo[0], filePathInfo[1]);
         if (Utils.isNwjs()) {
             localIntervalCount = paramLoadInterval;
