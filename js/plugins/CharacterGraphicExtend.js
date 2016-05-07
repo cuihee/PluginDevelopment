@@ -261,8 +261,13 @@
         return this._tileBlockHeight;
     };
 
+    var _Game_CharacterBase_pos = Game_CharacterBase.prototype.pos;
     Game_CharacterBase.prototype.pos = function(x, y) {
-        return (this._x - this.tileBlockWidth() / 2 <= x && this._x + this.tileBlockWidth() / 2 >= x) && this._y === y;
+        if (this.tileBlockWidth() >= 2) {
+            return (this._x - this.tileBlockWidth() / 2 <= x && this._x + this.tileBlockWidth() / 2 >= x) && this._y === y;
+        } else {
+            return _Game_CharacterBase_pos.apply(this, arguments);
+        }
     };
 
     var _Game_CharacterBase_screenX = Game_CharacterBase.prototype.screenX;

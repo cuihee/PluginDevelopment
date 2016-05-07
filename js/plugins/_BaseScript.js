@@ -246,7 +246,7 @@
             console.log('プラグインコマンドの実行中にエラーが発生しました。');
             console.log('- コマンド名 　: ' + command);
             console.log('- コマンド引数 : ' + args);
-            console.log('- エラー原因   : ' + e.toString());
+            console.log('- エラー原因   : ' + e.stack || e.toString());
         }
     };
 
