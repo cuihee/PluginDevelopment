@@ -6,6 +6,11 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.4.1 2016/05/20 ダメージ床や茂みで上半分のみ接している場合は無効にするよう変更
+// 1.4.0 2016/05/20 トリガー領域を上下左右で細かく指定できる機能を追加
+//                  英名のプラグインコマンドが正しく機能していなかった問題を修正
+// 1.3.0 2016/05/16 タイルの下半分のみ通行不可にできるような地形タグとリージョンIDの指定を追加
+//                  イベントごとにトリガー拡大を設定できる機能を追加
 // 1.2.0 2016/05/11 タイルの上半分のみ通行不可にできるような地形タグとリージョンIDの指定を追加
 //                  歩数の増加およびエンカウント歩数とダメージ床を通常の歩数に合わせて調整できる機能を追加
 // 1.1.0 2016/05/08 イベントごとに「すり抜け禁止」の可否を設定できる機能を追加
@@ -61,20 +66,29 @@
  * @desc 上半分のタイルのみ通行不可となるリージョンIDです。0を指定すると無効になります。
  * @default 0
  *
+ * @param LowerNpTerrainTag
+ * @desc 下半分のタイルのみ通行不可となる地形タグです。0を指定すると無効になります。
+ * @default 0
+ *
+ * @param LowerNpRegionId
+ * @desc 下半分のタイルのみ通行不可となるリージョンIDです。0を指定すると無効になります。
+ * @default 0
+ *
  * @help Moving distance in half.
  *
  * Plugin command
- * ・HalfMoveDisable
+ * ・HALF_MOVE_DISABLE
  * Disable half move.
  *
- * ・HalfMoveEnable
+ * ・HALF_MOVE_ENABLE
  * Enable half move.
  *
  * Note(Event Editor)
  * <HMHalfDisable> -> Disable half move.
  * <HMThroughDisable> -> Disable half through.
- * <HMWidth:2> -> Expansion event size(width)
- * <HMHeight:2> -> Expansion event size(height)
+ * <HMTriggerExpansion:ON> -> Expansion trigger area ON
+ * <HMTriggerExpansion:OFF> -> Expansion trigger area OFF
+ * <HMExpansionArea:1,1.1,1> -> Expansion trigger area(down,left,right,up)
  *
  * This plugin is released under the MIT License.
  */
@@ -95,7 +109,7 @@
  * @default OFF
  *
  * @param 角回避
- * @desc 直進中にマップの角に引っ掛かった場合、斜め移動に切り替えて再試行します。
+ * @desc 直進中にマップの角に引っ掛かった場合、斜め移動に切り替えて再試行します。進行方向に起動可能なイベントがある場合は無効です。
  * @default ON
  *
  * @param 斜め移動中減速
@@ -103,7 +117,7 @@
  * @default OFF
  *
  * @param トリガー拡大
- * @desc プライオリティが「通常キャラと同じ」イベントの起動領域を左右に半マス分だけ拡張します。
+ * @desc イベントの起動領域を拡張します。プライオリティによって拡張領域が異なります。
  * @default OFF
  *
  * @param 実歩数調整
@@ -134,12 +148,12 @@
  *  （パラメータの間は半角スペースで区切る）
  *
  * ・半歩移動禁止
- * ・HalfMoveDisable
+ * ・HALF_MOVE_DISABLE
  * 半歩移動を一時的に禁止します。この情報はセーブデータに含まれます。
  * 特定のイベント等で禁止したい場合等に使用します。
  *
  * ・半歩移動許可
- * ・HalfMoveEnable
+ * ・HALF_MOVE_ENABLE
  * 禁止していた半歩移動をもとに戻します。
  *
  * イベントごとの拡張機能を利用するには、
@@ -153,13 +167,31 @@
  * <HMすり抜け禁止>
  * <HMThroughDisable>
  *
- * 対象イベントの領域が拡大します。半歩移動の場合、場所移動等のイベントを並べると
- * 間に入ったときに起動しないので、このタグで起動領域を拡張してください。
- * この機能はイベントのグラフィックには影響を与えません。
- * <HM横幅:2>   // イベントの横方向のサイズが2マスになります。
- * <HMWidth:2>  // イベントの横方向のサイズが2マスになります。
- * <HM高さ:3>   // イベントの縦方向のサイズが3マスになります。
- * <HMHeight:3> // イベントの縦方向のサイズが3マスになります。
+ * 対象イベントのトリガー拡大の有無を個別に設定します。
+ * 設定がない場合は、パラメータ「トリガー拡大」の値が適用されます。
+ * <HMトリガー拡大:ON>
+ * <HMトリガー拡大:OFF>
+ *
+ * ・トリガー拡大をONにした場合の仕様
+ * プライオリティが「通常キャラと同じ」かつイベントすり抜けが有効な場合
+ * 　左右に半マスずつ起動可能領域が拡張されます。
+ *
+ * 上記以外の場合、個別にトリガー領域を設定することができます。
+ * 以下のとおり記述してください。
+ * // 下、左、右、上方向にそれぞれ1マス、2マス、3マス、4マス拡大したい場合
+ * <HM拡大領域:1,2.3,4>
+ *
+ * // 下、左、右、上方向にそれぞれ0.5マス、1マス、1マス、0.5マス拡大したい場合
+ * <HM拡大領域:0.5,1.1,0.5>
+ *
+ * 何も記述しないと、上下左右に半マスずつトリガー領域が拡張されます。
+ *
+ * 注意！
+ * 対象イベントの領域が拡大する以下のタグは廃止になりました。
+ * <HM横幅:2>
+ * <HMWidth:2>
+ * <HM高さ:3>
+ * <HMHeight:3>
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -217,6 +249,37 @@
         return (parseInt(arg,  10) || 0).clamp(min, max);
     };
 
+    var getArgArrayFloat = function (args, min, max) {
+        var values = getArgArrayString(args, false);
+        if (arguments.length < 2) min = -Infinity;
+        if (arguments.length < 3) max = Infinity;
+        for (var i = 0; i < values.length; i++) values[i] = (parseFloat(values[i], 10) || 0).clamp(min, max);
+        return values;
+    };
+
+    var getArgArrayString = function (args, upperFlg) {
+        var values = getArgString(args, upperFlg).split(',');
+        for (var i = 0; i < values.length; i++) values[i] = values[i].trim();
+        return values;
+    };
+
+    var getArgString = function (arg, upperFlg) {
+        arg = convertEscapeCharacters(arg, false);
+        return upperFlg ? arg.toUpperCase() : arg;
+    };
+
+    var getArgBoolean = function(arg) {
+        return (arg || '').toUpperCase() === 'ON';
+    };
+
+    var convertEscapeCharacters = function(text) {
+        if (text === null || text === undefined) {
+            text = '';
+        }
+        var windowLayer = SceneManager._scene._windowLayer;
+        return windowLayer ? windowLayer.children[0].convertEscapeCharacters(text) : text;
+    };
+
     //=============================================================================
     // パラメータの取得と整形
     //=============================================================================
@@ -266,11 +329,11 @@
     Game_Interpreter.prototype.pluginCommandHalfMove = function (command, args) {
         switch (getCommandName(command)) {
             case '半歩移動禁止' :
-            case 'HalfMoveDisable':
+            case 'HALF_MOVE_DISABLE':
                 $gameSystem.setEnableHalfMove(false);
                 break;
             case '半歩移動許可' :
-            case 'HalfMoveEnable':
+            case 'HALF_MOVE_ENABLE':
                 $gameSystem.setEnableHalfMove(true);
                 break;
         }
@@ -384,7 +447,6 @@
             result = result || this.checkLayeredTilesFlags(x - Game_Map.tileUnit, y, bit);
         } else if (this.isHalfPos(y)) {
             result = this.checkLayeredTilesFlags(x, y + Game_Map.tileUnit, bit);
-            result = result || this.checkLayeredTilesFlags(x, y - Game_Map.tileUnit, bit);
         } else {
             result = _Game_Map_checkLayeredTilesFlags.apply(this, arguments);
         }
@@ -421,7 +483,9 @@
         var halfPositionCount = localHalfPositionCount;
         localHalfPositionCount = 0;
         if (!this.isHalfMove()) {
-            result = alias(x, y, d);
+            var x5  = $gameMap.roundXWithDirection(x, d);
+            var y5  = $gameMap.roundYWithDirection(y, d);
+            result = alias(x, y, d) && !$gameMap.isLowerNp(x5, y5);
         } else if (this.isHalfPosX(x) && this.isHalfPosY(y)) {
             if (d === 8) {
                 var y1      = $gameMap.roundHalfYWithDirection(y, d);
@@ -625,15 +689,22 @@
     var _Game_CharacterBase_isCollidedWithEvents = Game_CharacterBase.prototype.isCollidedWithEvents;
     Game_CharacterBase.prototype.isCollidedWithEvents = function(x, y) {
         var result = _Game_CharacterBase_isCollidedWithEvents.apply(this, arguments);
-        return result ? true : this.isCollidedWithEventsForHalfMove(x, y, false);
+        return result ? true : this.isCollidedWithEventsForHalfMove(x, y);
     };
 
-    Game_CharacterBase.prototype.isCollidedWithEventsForHalfMove = function(x, y, visibleOnly) {
+    Game_CharacterBase.prototype.isCollidedWithEventsForHalfMove = function(x, y) {
         var events = $gameMap.eventsXyUnitNt(x, y);
-        return events.some(function(event) {
-            return event.isNormalPriority() && !event.isHalfThrough(y) && (!visibleOnly || event.isRealVisible());
-        });
+        var result = false;
+        events.forEach(function(event) {
+            if (event.isNormalPriority() && !event.isHalfThrough(y)) {
+                this.collideToEvent(event);
+                result = true;
+            }
+        }.bind(this));
+        return result;
     };
+
+    Game_CharacterBase.prototype.collideToEvent = function(target) {};
 
     Game_CharacterBase.prototype.getPrevX = function() {
         return this._prevX !== undefined ? this._prevX : this._x;
@@ -664,14 +735,20 @@
         localHalfPositionCount = halfPositionCount;
     };
 
-    Game_CharacterBase.prototype.isRealVisible = function() {
-        return (this._characterName !== '' || this._tileId !== 0) && !this._transparent;
+    Game_CharacterBase.prototype.getDistanceForHalfMove = function(character) {
+        return $gameMap.distance(this.x, this.y, character.x, character.y);
     };
 
     //=============================================================================
     // Game_Player
     //  8方向移動に対応させます。
     //=============================================================================
+    var _Game_Player_initMembers = Game_Player.prototype.initMembers;
+    Game_Player.prototype.initMembers = function() {
+        _Game_Player_initMembers.apply(this, arguments);
+        this._testEventStart = false;
+    };
+
     var _Game_Player_locate = Game_Player.prototype.locate;
     Game_Player.prototype.locate = function(x, y) {
         _Game_Player_locate.apply(this, arguments);
@@ -736,23 +813,57 @@
 
     var _Game_Player_startMapEvent = Game_Player.prototype.startMapEvent;
     Game_Player.prototype.startMapEvent = function(x, y, triggers, normal) {
-        if (normal) {
+        _Game_Player_startMapEvent.apply(this, arguments);
+        if (!$gameMap.isEventRunning()) {
+            $gameMap.events().forEach(function(event) {
+                if (event.isTriggerExpansion(x, y) && event.isTriggerIn(triggers) &&
+                    event.isNormalPriority() === normal && (event.isCollidedFromPlayer() || !event.isNormalPriority())) {
+                    event.start();
+                }
+            });
+        }
+    };
+
+    var _Game_Player_startMapEvent2 = Game_Player.prototype.startMapEvent;
+    Game_Player.prototype.startMapEvent = function(x, y, triggers, normal) {
+        if (normal && this.isHalfMove()) {
             var d = this.direction();
             if (!this.canPass(this.x, this.y, d)) {
-                _Game_Player_startMapEvent.apply(this, arguments);
+                _Game_Player_startMapEvent2.apply(this, arguments);
                 arguments[0] = $gameMap.roundHalfXWithDirection(x, 10 - d);
                 arguments[1] = $gameMap.roundHalfYWithDirection(y, 10 - d);
-                _Game_Player_startMapEvent.apply(this, arguments);
+                _Game_Player_startMapEvent2.apply(this, arguments);
             }
         } else {
-            _Game_Player_startMapEvent.apply(this, arguments);
+            _Game_Player_startMapEvent2.apply(this, arguments);
         }
+    };
+
+    Game_Player.prototype.isStartingPreparedMapEvent = function(x, y) {
+        $gameMap.events().forEach(function (event) {
+            event.resetStartingPrepared();
+        });
+        this._testEventStart = true;
+        this.startMapEvent(x, y, [0, 1, 2], true);
+        if ($gameMap.isCounter(x, y)) {
+            var x1 = $gameMap.roundXWithDirection(x, this.direction());
+            var y1 = $gameMap.roundYWithDirection(y, this.direction());
+            this.startMapEvent(x1, y1, [0], true);
+        }
+        this._testEventStart = false;
+        return $gameMap.events().some(function (event) {
+            return event.isStartingPrepared();
+        });
+    };
+
+    Game_Player.prototype.isTestEventStart = function() {
+        return !!this._testEventStart;
     };
 
     Game_Player.prototype.executeMoveRetry = function(d) {
         var x2 = $gameMap.roundXWithDirection(this.x, d);
         var y2 = $gameMap.roundYWithDirection(this.y, d);
-        if (!this.isCollidedWithCharacters(x2, y2, true)) {
+        if (!this.isStartingPreparedMapEvent(x2, y2)) {
             if (d === 2 || d === 8) {
                 this.moveDiagonallyForRetry(4, d);
                 this.moveDiagonallyForRetry(6, d);
@@ -788,6 +899,17 @@
         }.bind(this));
     };
 
+    Game_Player.prototype.isCollidedWithEventsForHalfMove = function(x, y) {
+        $gameMap.events().forEach(function (event) {
+            event.setCollidedFromPlayer(false);
+        });
+        return Game_CharacterBase.prototype.isCollidedWithEventsForHalfMove.call(this, x, y);
+    };
+
+    Game_Player.prototype.collideToEvent = function(target) {
+        target.setCollidedFromPlayer(true);
+    };
+
     //=============================================================================
     // Game_Event
     //  半歩移動用の接触処理を定義します。
@@ -795,10 +917,29 @@
     var _Game_Event_initialize = Game_Event.prototype.initialize;
     Game_Event.prototype.initialize = function(mapId, eventId) {
         _Game_Event_initialize.apply(this, arguments);
-        this._halfDisable    = getMetaValues(this.event(), ['HalfDisable', '半歩禁止']);
-        this._throughDisable = getMetaValues(this.event(), ['ThroughDisable', 'すり抜け禁止']);
-        this._eventWidth     = getArgNumber(getMetaValues(this.event(), ['Width', '横幅']), 0);
-        this._eventHeight    = getArgNumber(getMetaValues(this.event(), ['Height', '高さ']), 0);
+        this._halfDisable      = getMetaValues(this.event(), ['HalfDisable', '半歩禁止']);
+        this._throughDisable   = getMetaValues(this.event(), ['ThroughDisable', 'すり抜け禁止']);
+        this._eventWidth       = getArgNumber(getMetaValues(this.event(), ['Width', '横幅']), 0);
+        this._eventHeight      = getArgNumber(getMetaValues(this.event(), ['Height', '高さ']), 0);
+        var metaValue = getMetaValues(this.event(), ['TriggerExpansion', 'トリガー拡大']);
+        this._triggerExpansion = metaValue ? getArgBoolean(metaValue) : paramTriggerExpansion;
+    };
+
+    var _Game_Event_setupPage = Game_Event.prototype.setupPage;
+    Game_Event.prototype.setupPage = function() {
+        _Game_Event_setupPage.apply(this, arguments);
+        this._expansionArea = this.getExpansionArea();
+    };
+
+    Game_Event.prototype.getExpansionArea = function() {
+        var metaValue = getMetaValues(this.event(), ['ExpansionArea', '拡大領域']);
+        if(this.isNormalPriority() && !this.isThroughDisable()) {
+            return [0, 0.5, 0.5, 0];
+        } else if (metaValue) {
+            return getArgArrayFloat(metaValue, 0);
+        } else {
+            return [0.5, 0.5, 0.5, 0.5];
+        }
     };
 
     var _Game_Event_isCollidedWithEvents = Game_Event.prototype.isCollidedWithEvents;
@@ -809,6 +950,72 @@
         return events.some(function(event) {
             return event !== this && !event.isHalfThrough(y);
         }.bind(this));
+    };
+
+    var _Game_Event_checkEventTriggerTouch = Game_Event.prototype.checkEventTriggerTouch;
+    Game_Event.prototype.checkEventTriggerTouch = function(x, y) {
+        _Game_Event_checkEventTriggerTouch.apply(this, arguments);
+        if ($gameMap.isEventRunning()) return;
+        if (this._trigger === 2 && $gamePlayer.posUnit(x, y)) {
+            if (this.isTriggerExpansion(x, y) && !this.isJumping() && this.isNormalPriority() &&
+                this.getDistanceForHalfMove($gamePlayer) <= 1) {
+                this.start();
+            }
+        }
+    };
+
+    var _Game_Event_checkEventTriggerTouch2 = Game_Event.prototype.checkEventTriggerTouch;
+    Game_Event.prototype.checkEventTriggerTouch = function(x, y) {
+        var d = this.direction();
+        _Game_Event_checkEventTriggerTouch2.apply(this, arguments);
+        arguments[0] = $gameMap.roundHalfXWithDirection(x, 10 - d);
+        arguments[1] = $gameMap.roundHalfYWithDirection(y, 10 - d);
+        _Game_Event_checkEventTriggerTouch2.apply(this, arguments);
+    };
+
+    var _Game_Event_start = Game_Event.prototype.start;
+    Game_Event.prototype.start = function() {
+        if (!$gamePlayer.isTestEventStart()) {
+            _Game_Event_start.apply(this, arguments);
+        } else {
+            var list = this.list();
+            if (list && list.length > 1) {
+                this._startingPrepared = true;
+            }
+        }
+    };
+
+    Game_Event.prototype.isStartingPrepared = function() {
+        return this._startingPrepared;
+    };
+
+    Game_Event.prototype.resetStartingPrepared = function() {
+        this._startingPrepared = false;
+    };
+
+    Game_Event.prototype.isTriggerExpansion = function(x, y) {
+        return this._triggerExpansion && this.isInExpansionArea(x, y);
+    };
+
+    Game_Event.prototype.isInExpansionArea = function(x, y) {
+        if (this.y + this._expansionArea[0] < y) {
+            return false;
+        } else if (this.x - this._expansionArea[1] > x) {
+            return false;
+        } else if (this.x + this._expansionArea[2] < x) {
+            return false;
+        } else if (this.y - this._expansionArea[3] > y) {
+            return false;
+        }
+        return true;
+    };
+
+    Game_Event.prototype.isCollidedFromPlayer = function() {
+        return this._collidedFromPlayer;
+    };
+
+    Game_Event.prototype.setCollidedFromPlayer = function(value) {
+        this._collidedFromPlayer = value;
     };
 
     //=============================================================================
