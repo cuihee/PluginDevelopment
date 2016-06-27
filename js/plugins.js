@@ -3,7 +3,7 @@
 var $plugins =
 [
 {"name":"DevToolsManage","status":true,"description":"デベロッパツール管理プラグイン","parameters":{"開始時に起動":"ON","常に前面表示":"OFF","デベロッパツール表示位置":"","最小化切替キー":"F8","リロードキー":"F12","画面の左寄せキー":"","高速化切替キー":"F1","強制戦闘勝利キー":"F11","スクリプト実行キー":"F10","フリーズキー":"","FPS表示":"OFF","タイトルカット":"OFF","高速開始":"OFF","高速スピード":"2","モバイル偽装":"OFF","メニューバー表示":"ON","クリックメニュー":"2"}},
-{"name":"CustomizeConfigDefault","status":true,"description":"オプションデフォルト値設定プラグイン","parameters":{"常時ダッシュ":"ON","コマンド記憶":"OFF","BGM音量":"0","BGS音量":"0","ME音量":"0","SE音量":"0"}},
+{"name":"CustomizeConfigDefault","status":true,"description":"オプションデフォルト値設定プラグイン","parameters":{"常時ダッシュ":"ON","コマンド記憶":"ON","BGM音量":"20","BGS音量":"20","ME音量":"20","SE音量":"20"}},
 {"name":"MapRapid","status":true,"description":"マップ高速化プラグイン","parameters":{"testPlayOnly":"ON","showMessageRapid":"ON","windowOpenRapid":"ON","fadeRapid":"ON"}},
 {"name":"PictureCallCommon","status":true,"description":"ピクチャのボタン化プラグイン","parameters":{"透明色を考慮":"ON","ピクチャ番号の変数番号":"21","ポインタX座標の変数番号":"41","ポインタY座標の変数番号":"42","タッチ操作抑制":"ON"}},
 {"name":"DTextPicture","status":true,"description":"動的文字列ピクチャ生成プラグイン","parameters":{}},
