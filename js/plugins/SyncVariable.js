@@ -6,6 +6,7 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.1 2016/06/02 認証ファイルの形式をJSONでも作成できるよう修正
 // 1.1.0 2016/05/25 Milkcocoa側のAPI更新によりローカル環境で実行できなくなっていた問題を修正
 // 1.0.0 2016/04/29 初版
 // ----------------------------------------------------------------------------
@@ -37,18 +38,23 @@
  * @param 同期終了スイッチ番号
  * @desc 同期対象になるスイッチの番号の終了位置です。
  * @default 0
+ * 
+ * @param 認証ファイル形式
+ * @desc 認証ファイルの形式をJSON形式で作成します。ブラウザ実行時にファイルをうまく読み込めない場合、ONにしてください。
+ * @default OFF
  *
  * @help ゲームをプレーしている全てのユーザ間で指定範囲内のスイッチ、変数の値を
  * 同期し、共有できるようになります。
  * オンライン要素が存在するゲームで使えるほか、作者が任意のタイミングで
  * プレイヤーのデータの変数・スイッチを操作できます。
  *
- * BssS(Backend as a service)にMilkcocoa(https://mlkcca.com/)を使用していますが、
+ * BaaS(Backend as a service)にMilkcocoa(https://mlkcca.com/)を使用していますが、
  * 新規に利用登録する必要はなく通常利用する上で意識する必要はありません。
  * 詳細は「使用方法」を参照してください。
  *
  * ・使用方法
  * 1. パラメータ「ユーザID」に任意の文字列を設定する。
+ *    入力できるのは12文字までです。
  * 例：triacontane
  *
  * 2. プロジェクトを保存(Ctrl+S)する。
@@ -91,6 +97,12 @@
  *
  * 2. 本プラグインは試験運用中です。利用状況によっては
  * サービスの運用を停止せざるを得ない場合があります。
+ * 
+ * 3. 認証ファイルとはセキュリティを担保するものではなく
+ * 共有スペース内で同一のユーザIDが使用されないように区切る
+ * ためのものです。
+ * 他のサービスで使っているパスワードを流用することは
+ * 止めてください。
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -102,11 +114,11 @@ function SyncManager() {
     throw new Error('This is a static class');
 }
 
-(function () {
+(function() {
     'use strict';
     var pluginName = 'SyncVariable';
 
-    var getCommandName = function (command) {
+    var getCommandName = function(command) {
         return (command || '').toUpperCase();
     };
 
@@ -131,7 +143,12 @@ function SyncManager() {
         return (parseInt(value, 10) || 0).clamp(min, max);
     };
 
-    var getArgString = function (arg, upperFlg) {
+    var getParamBoolean = function(paramNames) {
+        var value = getParamOther(paramNames);
+        return (value || '').toUpperCase() === 'ON';
+    };
+
+    var getArgString = function(arg, upperFlg) {
         arg = convertEscapeCharactersAndEval(arg, false);
         return upperFlg ? arg.toUpperCase() : arg;
     };
@@ -154,16 +171,17 @@ function SyncManager() {
     //=============================================================================
     var paramUserId            = getParamString(['UserId', 'ユーザID']);
     var paramSyncVariableStart = getParamNumber(['SyncVariableStart', '同期開始変数番号'], 0, 5000);
-    var paramSyncVariableEnd   = getParamNumber(['SyncVariableEnd'  , '同期終了変数番号'], 0, 5000);
-    var paramSyncSwitchStart   = getParamNumber(['SyncSwitchStart'  , '同期開始スイッチ番号'], 0, 5000);
-    var paramSyncSwitchEnd     = getParamNumber(['SyncSwitchEnd'    , '同期終了スイッチ番号'], 0, 5000);
+    var paramSyncVariableEnd   = getParamNumber(['SyncVariableEnd', '同期終了変数番号'], 0, 5000);
+    var paramSyncSwitchStart   = getParamNumber(['SyncSwitchStart', '同期開始スイッチ番号'], 0, 5000);
+    var paramSyncSwitchEnd     = getParamNumber(['SyncSwitchEnd', '同期終了スイッチ番号'], 0, 5000);
+    var paramAuthFileFormat    = getParamBoolean(['AuthFileFormat', '認証ファイル形式']);
 
     //=============================================================================
     // Game_Interpreter
     //  プラグインコマンドを追加定義します。
     //=============================================================================
-    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-    Game_Interpreter.prototype.pluginCommand = function (command, args) {
+    var _Game_Interpreter_pluginCommand      = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.apply(this, arguments);
         try {
             this.pluginCommandSyncVariable(command, args);
@@ -184,7 +202,7 @@ function SyncManager() {
         }
     };
 
-    Game_Interpreter.prototype.pluginCommandSyncVariable = function (command, args) {
+    Game_Interpreter.prototype.pluginCommandSyncVariable = function(command, args) {
         switch (getCommandName(command)) {
             case 'SV_MAKE_AUTH_DATA' :
             case 'SV_認証データ作成' :
@@ -207,19 +225,19 @@ function SyncManager() {
     //=============================================================================
     Game_Switches.prototype.getSyncData = function() {
         var syncData = {};
-        for(var i = paramSyncSwitchStart; i < paramSyncSwitchEnd + 1; i++) {
+        for (var i = paramSyncSwitchStart; i < paramSyncSwitchEnd + 1; i++) {
             syncData[i] = this.value(i);
         }
         return syncData;
     };
 
     Game_Switches.prototype.setSyncData = function(syncData) {
-        for(var i = paramSyncSwitchStart; i < paramSyncSwitchEnd + 1; i++) {
+        for (var i = paramSyncSwitchStart; i < paramSyncSwitchEnd + 1; i++) {
             this.setValue(i, syncData[i]);
         }
     };
 
-    var _Game_Switches_setValue = Game_Switches.prototype.setValue;
+    var _Game_Switches_setValue      = Game_Switches.prototype.setValue;
     Game_Switches.prototype.setValue = function(switchId, value) {
         _Game_Switches_setValue.apply(this, arguments);
         if (paramSyncSwitchStart <= switchId && paramSyncSwitchEnd >= switchId) {
@@ -233,24 +251,24 @@ function SyncManager() {
     //=============================================================================
     Game_Variables.prototype.getSyncData = function() {
         var syncData = {};
-        for(var i = paramSyncVariableStart; i < paramSyncVariableEnd + 1; i++) {
+        for (var i = paramSyncVariableStart; i < paramSyncVariableEnd + 1; i++) {
             syncData[i] = this.value(i);
         }
         return syncData;
     };
 
     Game_Variables.prototype.setSyncData = function(syncData) {
-        for(var i = paramSyncVariableStart; i < paramSyncVariableEnd + 1; i++) {
+        for (var i = paramSyncVariableStart; i < paramSyncVariableEnd + 1; i++) {
             this.setValue(i, syncData[i]);
         }
     };
 
-    var _Game_Variables_setValue = Game_Variables.prototype.setValue;
+    var _Game_Variables_setValue      = Game_Variables.prototype.setValue;
     Game_Variables.prototype.setValue = function(variableId, value) {
         _Game_Variables_setValue.apply(this, arguments);
         if (paramSyncVariableStart <= variableId && paramSyncVariableEnd >= variableId) {
             SyncManager.setNeedUpload();
-        }    
+        }
     };
 
     //=============================================================================
@@ -260,7 +278,7 @@ function SyncManager() {
     SyncManager._milkCocoaUrl   = 'https://cdn.rawgit.com/triacontane/RPGMakerMV/master/milkcocoa.js';
     SyncManager._milkCocoaApiId = 'leadinlmv4lo.mlkcca.com';
     SyncManager._loadListeners  = [];
-    SyncManager.authFileName    = 'SyncVariable.rpgdata';
+    SyncManager.authFileName    = (paramAuthFileFormat ? 'SyncVariable.json' : 'SyncVariable.rpgdata');
     SyncManager.userId          = paramUserId;
     SyncManager.needUpload      = false;
     SyncManager.needDownload    = false;
@@ -311,12 +329,12 @@ function SyncManager() {
         if (this._coolDown <= 0 && this.canUse()) {
             if (this.needDownload) {
                 this.needDownload = false;
-                this._coolDown = 60;
+                this._coolDown    = 60;
                 this.downloadVariables();
             }
             if (this.needUpload && this.isDownloaded) {
                 this.needUpload = false;
-                this._coolDown = 60;
+                this._coolDown  = 60;
                 this.uploadVariables();
             }
         } else {
@@ -325,24 +343,24 @@ function SyncManager() {
     };
 
     SyncManager.uploadVariables = function() {
-        var syncData = {};
+        var syncData       = {};
         syncData.variables = $gameVariables.getSyncData();
         syncData.switches  = $gameSwitches.getSyncData();
-        this._mainData.set(paramUserId, syncData, function () {
+        this._mainData.set(paramUserId, syncData, function() {
             this.outLog('変数情報を送信しました。');
         }.bind(this));
     };
 
     SyncManager.downloadVariables = function() {
         if (!this.canUse()) return;
-        this._mainData.get(paramUserId, function (err, datum) {
+        this._mainData.get(paramUserId, function(err, datum) {
             if (!err) {
                 this.outLog('変数情報を受信しました。');
-                var syncData = datum.value;
+                var syncData   = datum.value;
                 this.isExecute = true;
                 $gameVariables.setSyncData(syncData.variables);
                 $gameSwitches.setSyncData(syncData.switches);
-                this.isExecute = false;
+                this.isExecute    = false;
                 this.isDownloaded = true;
             }
         }.bind(this));
@@ -357,7 +375,7 @@ function SyncManager() {
     };
 
     SyncManager.onLoadAuthData = function(onComplete, onError) {
-        this.getAuthData(function (err, datum) {
+        this.getAuthData(function(err, datum) {
             if (!err && datum.value.pass === this._authFile.pass) {
                 this.outLog('認証に成功しました。');
                 this._authority = true;
@@ -371,13 +389,14 @@ function SyncManager() {
     };
 
     SyncManager.makeAuthData = function(pass) {
-        this.addLoadListener(function () {
+        this.addLoadListener(function() {
             this.showDevTools();
             if (!paramUserId) this.terminate('パラメータ「ユーザID」を指定してください。');
-            this.getAuthData(function (err, datum) {
+            if (paramUserId.length > 12) this.terminate('パラメータ「ユーザID」は12文字以下で指定してください。');
+            this.getAuthData(function(err) {
                 if (err) {
-                    this._authData.set(this.userId, {pass:pass}, function () {
-                        StorageManager.saveSyncVariableAuthFile(JsonEx.stringify({pass:pass}));
+                    this._authData.set(this.userId, {pass: pass}, function() {
+                        StorageManager.saveSyncVariableAuthFile(JsonEx.stringify({pass: pass}));
                         this.uploadVariables();
                         this.terminate('登録が完了しました。パスワードは削除の際に必要なので控えておいてください。:' + pass);
                     }.bind(this));
@@ -389,25 +408,25 @@ function SyncManager() {
     };
 
     SyncManager.makeAuthFile = function(pass) {
-        this.addLoadListener(function () {
+        this.addLoadListener(function() {
             this.showDevTools();
-            StorageManager.saveSyncVariableAuthFile(JsonEx.stringify({pass:pass}));
+            StorageManager.saveSyncVariableAuthFile(JsonEx.stringify({pass: pass}));
             this.terminate('認証ファイルの再作成が完了しました。');
         }.bind(this));
     };
 
     SyncManager.deleteAuthData = function() {
-        this.addLoadListener(function () {
+        this.addLoadListener(function() {
             this.showDevTools();
-            this.loadAuthData(function () {
-                this._authData.remove(this.userId, function () {
+            this.loadAuthData(function() {
+                this._authData.remove(this.userId, function() {
                     StorageManager.removeSyncVariableAuthFile();
                     this._mainData.remove(this.userId);
                     this.terminate('対象のユーザ情報を削除しました。:' + this.userId);
-                }.bind(this), function () {
+                }.bind(this), function() {
                     this.terminate('対象のユーザ情報を削除できませんでした。:' + this.userId);
                 }.bind(this));
-            }.bind(this), function () {
+            }.bind(this), function() {
                 this.terminate('ユーザ情報の認証に失敗しました。すでに削除済みか、認証が不正です。:' + this.userId);
             }.bind(this));
         }.bind(this));
@@ -418,10 +437,10 @@ function SyncManager() {
         var url = 'data/' + this.authFileName;
         xhr.open('GET', url);
         xhr.overrideMimeType('application/json');
-        xhr.onload = function() {
+        xhr.onload  = function() {
             if (xhr.status < 400) {
-                var json = LZString.decompressFromBase64(xhr.responseText);
-                SyncManager._authFile = JsonEx.parse(json);
+                var data              = LZString.decompressFromBase64(xhr.responseText);
+                SyncManager._authFile = JsonEx.parse(paramAuthFileFormat ? xhr.responseText : data);
                 onLoad();
             }
         };
@@ -462,14 +481,14 @@ function SyncManager() {
     //  変動を同期します。
     //=============================================================================
     var DataManager_loadGameWithoutRescue = DataManager.loadGameWithoutRescue;
-    DataManager.loadGameWithoutRescue = function(savefileId) {
+    DataManager.loadGameWithoutRescue     = function(savefileId) {
         var result = DataManager_loadGameWithoutRescue.apply(this, arguments);
         if (result) SyncManager.setNeedDownload();
         return result;
     };
 
     var _DataManager_setupNewGame = DataManager.setupNewGame;
-    DataManager.setupNewGame = function() {
+    DataManager.setupNewGame      = function() {
         _DataManager_setupNewGame.apply(this, arguments);
         SyncManager.setNeedDownload();
     };
@@ -479,28 +498,18 @@ function SyncManager() {
     //  認証ファイルのセーブやロードを追加定義します。
     //=============================================================================
     StorageManager.saveSyncVariableAuthFile = function(json) {
-        var data = LZString.compressToBase64(json);
-        var fs = require('fs');
-        var dirPath = this.authFileDirectoryPath();
+        var data     = LZString.compressToBase64(json);
+        var fs       = require('fs');
+        var dirPath  = this.authFileDirectoryPath();
         var filePath = this.authFileDirectoryPath() + SyncManager.authFileName;
         if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath);
         }
-        fs.writeFileSync(filePath, data);
-    };
-
-    StorageManager.loadSyncVariableAuthFile = function() {
-        var data = null;
-        var fs = require('fs');
-        var filePath = this.authFileDirectoryPath() + SyncManager.authFileName;
-        if (fs.existsSync(filePath)) {
-            data = fs.readFileSync(filePath, { encoding: 'utf8' });
-        }
-        return LZString.decompressFromBase64(data);
+        fs.writeFileSync(filePath, paramAuthFileFormat ? json : data);
     };
 
     StorageManager.removeSyncVariableAuthFile = function() {
-        var fs = require('fs');
+        var fs       = require('fs');
         var filePath = this.authFileDirectoryPath() + SyncManager.authFileName;
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
@@ -520,14 +529,14 @@ function SyncManager() {
     //  Milkcocoaのライブラリを読み込みます。
     //=============================================================================
     PluginManager.loadOnlineScript = function(name, callBackFunction) {
-        var url = name;
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = url;
-        script.async = false;
+        var url        = name;
+        var script     = document.createElement('script');
+        script.type    = 'text/javascript';
+        script.src     = url;
+        script.async   = false;
         script.onerror = this.onError.bind(this);
-        script.onload = callBackFunction;
-        script._url = url;
+        script.onload  = callBackFunction;
+        script._url    = url;
         document.body.appendChild(script);
     };
 
@@ -536,13 +545,13 @@ function SyncManager() {
     //  SyncManagerの更新処理を呼び出します。
     //=============================================================================
     var _SceneManager_initialize = SceneManager.initialize;
-    SceneManager.initialize = function() {
+    SceneManager.initialize      = function() {
         PluginManager.loadOnlineScript(SyncManager._milkCocoaUrl, SyncManager.initialize.bind(SyncManager));
         _SceneManager_initialize.apply(this, arguments);
     };
 
     var _SceneManager_updateMain = SceneManager.updateMain;
-    SceneManager.updateMain = function() {
+    SceneManager.updateMain      = function() {
         _SceneManager_updateMain.apply(this, arguments);
         SyncManager.update();
     };

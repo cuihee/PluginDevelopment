@@ -1,12 +1,12 @@
 //=============================================================================
-// CharacterGraphicChange.js
+// SceneItemCreation.js
 // ----------------------------------------------------------------------------
 // Copyright (c) 2015 Triacontane
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
-// 1.0.0 2016/05/04 初版
+// 1.0.0 2016/06/25 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
 // [Twitter]: https://twitter.com/triacontane/
@@ -14,30 +14,15 @@
 //=============================================================================
 
 /*:
- * @plugindesc Plugin That ...
- * @author triacontane
- *
- * @param param
- * @desc parameter description
- * @default default value
- *
- * @help Plugin That ...
- *
- * Plugin Command
- *  XXXXX [XXX]
- *  ex1：XXXXX 1
- *
- * This plugin is released under the MIT License.
- */
-/*:ja
- * @plugindesc プラグイン名称が未入力です。
+ * @plugindesc アイテムクリエーションプラグイン
  * @author トリアコンタン
  *
  * @param パラメータ
  * @desc パラメータ説明
  * @default デフォルト値
  *
- * @help プラグイン説明が未入力です。
+ * @help 複数の材料から別のアイテムを作成する画面を提供します。
+ *
  *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
@@ -51,21 +36,20 @@
  *  このプラグインはもうあなたのものです。
  */
 
-(function () {
-    'use strict';
-    var pluginName    = 'CharacterGraphicChange';
-    var metaTagPrefix = 'CharacterGraphicChange';
+function Scene_ItemCreation() {
+    this.initialize.apply(this, arguments);
+}
 
-    var getCommandName = function (command) {
+(function() {
+    'use strict';
+    var pluginName    = 'SceneItemCreation';
+    var metaTagPrefix = 'SceneItemCreation';
+
+    var getCommandName = function(command) {
         return (command || '').toUpperCase();
     };
 
-    var getParamString = function (paramNames) {
-        var value = getParamOther(paramNames);
-        return value === null ? '' : value;
-    };
-
-    var getParamOther = function (paramNames) {
+    var getParamOther = function(paramNames) {
         if (!Array.isArray(paramNames)) paramNames = [paramNames];
         for (var i = 0; i < paramNames.length; i++) {
             var name = PluginManager.parameters(pluginName)[paramNames[i]];
@@ -74,38 +58,50 @@
         return null;
     };
 
-    //=============================================================================
-    // パラメータの取得と整形
-    //=============================================================================
-    var paramParamName = getParamString(['ParamName', 'パラメータ名']);
+    var getParamString = function(paramNames) {
+        var value = getParamOther(paramNames);
+        return value === null ? '' : value;
+    };
+
+    var getParamNumber = function(paramNames, min, max) {
+        var value = getParamOther(paramNames);
+        if (arguments.length < 2) min = -Infinity;
+        if (arguments.length < 3) max = Infinity;
+        return (parseInt(value, 10) || 0).clamp(min, max);
+    };
+
+    var getParamBoolean = function(paramNames) {
+        var value = getParamOther(paramNames);
+        return (value || '').toUpperCase() === 'ON';
+    };
 
     //=============================================================================
     // Game_Interpreter
     //  プラグインコマンドを追加定義します。
     //=============================================================================
     var _Game_Interpreter_pluginCommand      = Game_Interpreter.prototype.pluginCommand;
-    Game_Interpreter.prototype.pluginCommand = function (command, args) {
+    Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.apply(this, arguments);
         try {
-            this.pluginCommandCharacterGraphicChange(command, args);
+            this.pluginCommandSceneItemCreation(command, args);
         } catch (e) {
             if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
                 var window = require('nw.gui').Window.get();
                 if (!window.isDevToolsOpen()) {
                     var devTool = window.showDevTools();
                     devTool.moveTo(0, 0);
-                    devTool.resizeTo(Graphics.width, Graphics.height);
+                    devTool.resizeTo(window.screenX + window.outerWidth, window.screenY + window.outerHeight);
                     window.focus();
                 }
             }
             console.log('プラグインコマンドの実行中にエラーが発生しました。');
             console.log('- コマンド名 　: ' + command);
             console.log('- コマンド引数 : ' + args);
-            console.log('- エラー原因   : ' + e.toString());
+            console.log('- エラー原因   : ' + e.stack || e.toString());
         }
     };
 
-    Game_Interpreter.prototype.pluginCommandCharacterGraphicChange = function (command, args) {
+    Game_Interpreter.prototype.pluginCommandSceneItemCreation = function(command, args) {
         switch (getCommandName(command)) {
             case 'XXXXX' :
                 break;
@@ -113,17 +109,16 @@
     };
 
     //=============================================================================
-    // Game_CharacterGraphicChange
-    //  CharacterGraphicChange
+    // Scene_ItemCreation
+    //  アイテム作成画面を扱うクラスです。
     //=============================================================================
-    function Game_CharacterGraphicChange() {
-        this.initialize.apply(this, arguments);
-    }
+    Scene_ItemCreation.prototype             = Object.create(Scene_ItemBase.prototype);
+    Scene_ItemCreation.prototype.constructor = Scene_ItemCreation;
 
-    Game_CharacterGraphicChange.prototype             = Object.create(Game_CharacterGraphicChange_Parent.prototype);
-    Game_CharacterGraphicChange.prototype.constructor = Game_CharacterGraphicChange;
-
-    Game_CharacterGraphicChange.prototype.initialize = function () {
+    Scene_ItemCreation.prototype.create = function() {
+        Scene_ItemBase.prototype.create.call(this);
     };
+
+
 })();
 

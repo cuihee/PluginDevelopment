@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.3.1 2016/06/07 描画文字が半角英数字のみかつフォントを未指定の場合に文字が描画されない不具合を修正
+// 1.3.0 2016/06/03 制御文字\oc[c] \ow[n]に対応
 // 1.2.2 2016/03/28 データベース情報を簡単に出力する制御文字を追加
 // 1.2.1 2016/01/29 コマンド「D_TEXT_SETTING」の実装が「D_TEST_SETTING」になっていたので修正（笑）
 // 1.2.0 2016/01/27 複数行表示に対応
@@ -76,6 +78,8 @@
  * \armor[n]  n 番の防具情報（アイコン＋名称）
  * \skill[n]  n 番のスキル情報（アイコン＋名称）
  * \state[n]  n 番のステート情報（アイコン＋名称）
+ * \oc[c] アウトラインカラーを「c」に設定(例:\oc[red])
+ * \ow[n] アウトライン幅を「n」に設定(例:\ow[5])
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -154,7 +158,7 @@
     Game_Interpreter.prototype.pluginCommandDTextPicture = function(command, args) {
         switch (getCommandName(command)) {
             case 'D_TEXT' :
-                if (isNaN(args[args.length - 1])) args.push($gameScreen.dTextSize || 28);
+                if (isNaN(args[args.length - 1]) || args.length === 1) args.push($gameScreen.dTextSize || 28);
                 var fontSize = getArgNumber(args.pop());
                 $gameScreen.setDTextPicture(getArgString(connectArgs(args), false), fontSize);
                 break;
@@ -247,7 +251,7 @@
     Window_Base.prototype.convertEscapeCharacters = function(text) {
         text = _Window_Base_convertEscapeCharacters.call(this, text);
         text = text.replace(/\x1bV\[(\d+)\,(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1])).padZero(arguments[2]);
+            return $gameVariables.value(parseInt(arguments[1], 10)).padZero(arguments[2]);
         }.bind(this));
         text = text.replace(/\x1bITEM\[(\d+)\]/gi, function() {
             var item = $dataItems[getArgNumber(arguments[1], 1, $dataItems.length)];
@@ -337,6 +341,13 @@
                             break;
                     }
                     break;
+                case 'OC':
+                    var param = this.hiddenWindow.obtainEscapeParamString(textState);
+                    bitmap.outlineColor = param;
+                    break;
+                case 'OW':
+                    bitmap.outlineWidth = this.hiddenWindow.obtainEscapeParam(textState);
+                    break;
             }
         } else if (textState.text[textState.index] === '\n') {
             this._processNewLine(textState, bitmap);
@@ -416,5 +427,19 @@
     Bitmap_Virtual.prototype.blt = function(source, sx, sy, sw, sh, dx, dy, dw, dh) {
         this.width  = Math.max(dx + (dw || sw), this.width);
         this.height = Math.max(dy + (dy || sy), this.height);
+    };
+
+    //=============================================================================
+    // Window_Base
+    //  文字列パラメータの取得
+    //=============================================================================
+    Window_Base.prototype.obtainEscapeParamString = function(textState) {
+        var arr = /^\[.+?\]/.exec(textState.text.slice(textState.index));
+        if (arr) {
+            textState.index += arr[0].length;
+            return arr[0].substring(1, arr[0].length - 1);
+        } else {
+            return '';
+        }
     };
 })();

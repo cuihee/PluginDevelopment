@@ -1,12 +1,12 @@
 //=============================================================================
-// test.js
+// RetryBattle.js
 // ----------------------------------------------------------------------------
 // Copyright (c) 2015-2016 Triacontane
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
-// 1.0.0 2016/05/07 初版
+// 1.0.0 2016/06/25 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
 // [Twitter]: https://twitter.com/triacontane/
@@ -30,14 +30,15 @@
  * This plugin is released under the MIT License.
  */
 /*:ja
- * @plugindesc プラグイン名称が未入力です。
+ * @plugindesc リトライプラグイン
  * @author トリアコンタン
  *
  * @param パラメータ
  * @desc パラメータ説明
  * @default デフォルト値
  *
- * @help プラグイン説明が未入力です。
+ * @help 戦闘でゲームオーバーになったあとのゲームオーバー画面でリトライ可能になります。
+ *
  *
  * プラグインコマンド詳細
  *  イベントコマンド「プラグインコマンド」から実行。
@@ -51,21 +52,21 @@
  *  このプラグインはもうあなたのものです。
  */
 
-(function () {
+(function() {
     'use strict';
-    var pluginName    = 'test';
-    var metaTagPrefix = 'test';
+    var pluginName    = 'RetryBattle';
+    var metaTagPrefix = 'RetryBattle';
 
-    var getCommandName = function (command) {
+    var getCommandName = function(command) {
         return (command || '').toUpperCase();
     };
 
-    var getParamString = function (paramNames) {
+    var getParamString = function(paramNames) {
         var value = getParamOther(paramNames);
         return value === null ? '' : value;
     };
 
-    var getParamOther = function (paramNames) {
+    var getParamOther = function(paramNames) {
         if (!Array.isArray(paramNames)) paramNames = [paramNames];
         for (var i = 0; i < paramNames.length; i++) {
             var name = PluginManager.parameters(pluginName)[paramNames[i]];
@@ -84,17 +85,18 @@
     //  プラグインコマンドを追加定義します。
     //=============================================================================
     var _Game_Interpreter_pluginCommand      = Game_Interpreter.prototype.pluginCommand;
-    Game_Interpreter.prototype.pluginCommand = function (command, args) {
+    Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.apply(this, arguments);
+        if (!command.match(new RegExp('^' + metaTagPrefix))) return;
         try {
-            this.pluginCommandtest(command, args);
+            this.pluginCommandRetryBattle(command.replace(metaTagPrefix, ''), args);
         } catch (e) {
             if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
                 var window = require('nw.gui').Window.get();
                 if (!window.isDevToolsOpen()) {
                     var devTool = window.showDevTools();
                     devTool.moveTo(0, 0);
-                    devTool.resizeTo(Graphics.width, Graphics.height);
+                    devTool.resizeTo(window.screenX + window.outerWidth, window.screenY + window.outerHeight);
                     window.focus();
                 }
             }
@@ -105,7 +107,7 @@
         }
     };
 
-    Game_Interpreter.prototype.pluginCommandtest = function (command, args) {
+    Game_Interpreter.prototype.pluginCommandRetryBattle = function(command, args) {
         switch (getCommandName(command)) {
             case 'XXXXX' :
                 break;
@@ -113,17 +115,16 @@
     };
 
     //=============================================================================
-    // Game_test
-    //  test
+    // Game_RetryBattle
+    //  RetryBattle
     //=============================================================================
-    function Game_test() {
+    function Game_RetryBattle() {
         this.initialize.apply(this, arguments);
     }
 
-    Game_test.prototype             = Object.create(Game_test_Parent.prototype);
-    Game_test.prototype.constructor = Game_test;
+    Game_RetryBattle.prototype.constructor = Game_RetryBattle;
 
-    Game_test.prototype.initialize = function () {
+    Game_RetryBattle.prototype.initialize = function() {
     };
 })();
 

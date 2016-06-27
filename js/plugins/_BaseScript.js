@@ -144,14 +144,20 @@
     };
 
     var getArgString = function(arg, upperFlg) {
-        arg = convertEscapeCharactersAndEval(arg, false);
+        arg = convertEscapeCharacters(arg);
         return upperFlg ? arg.toUpperCase() : arg;
     };
 
     var getArgNumber = function(arg, min, max) {
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
-        return (parseInt(convertEscapeCharactersAndEval(arg, true), 10) || 0).clamp(min, max);
+        return (parseInt(convertEscapeCharacters(arg), 10) || 0).clamp(min, max);
+    };
+
+    var getArgNumberWithEval = function(arg, min, max) {
+        if (arguments.length < 2) min = -Infinity;
+        if (arguments.length < 3) max = Infinity;
+        return (parseInt(eval(convertEscapeCharacters(arg)), 10) || 0).clamp(min, max);
     };
 
     var getArgBoolean = function(arg) {
@@ -178,25 +184,32 @@
         return result;
     };
 
-    var convertEscapeCharactersAndEval = function(text, evalFlg) {
-        if (text === null || text === undefined) {
-            text = evalFlg ? '0' : '';
-        }
-        var window = SceneManager._scene._windowLayer.children[0];
-        if (window) {
-            var result = window.convertEscapeCharacters(text);
-            return evalFlg ? eval(result) : result;
-        } else {
-            return text;
-        }
-    };
-
     var convertEscapeCharacters = function(text) {
-        if (text === null || text === undefined) {
-            text = '';
-        }
+        if (text == null) text = '';
         var windowLayer = SceneManager._scene._windowLayer;
         return windowLayer ? windowLayer.children[0].convertEscapeCharacters(text) : text;
+    };
+
+    var convertEscapeCharacters = function(text, evalFlg) {
+        if (text == null) text = '';
+        text = text.replace(/\\/g, '\x1b');
+        text = text.replace(/\x1b\x1b/g, '\\');
+        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
+            return $gameVariables.value(parseInt(arguments[1], 10));
+        }.bind(this));
+        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
+            return $gameVariables.value(parseInt(arguments[1], 10));
+        }.bind(this));
+        text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
+            var actor = parseInt(arguments[1], 10) >= 1 ? $gameActors.actor(parseInt(arguments[1], 10)) : null;
+            return actor ? actor.name() : '';
+        }.bind(this));
+        text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
+            var actor = parseInt(arguments[1], 10) >= 1 ? $gameParty.members()[parseInt(arguments[1], 10) - 1] : null;
+            return actor ? actor.name() : '';
+        }.bind(this));
+        text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
+        return text;
     };
 
     var checkTypeNumber = function(value) {
@@ -238,6 +251,24 @@
     }
 
     //=============================================================================
+    // DataManager
+    //  データ検索用の共通処理です。
+    //=============================================================================
+    if (!DataManager.searchDataItem) {
+        DataManager.searchDataItem = function(dataArray, columnName, columnValue) {
+            var result = 0;
+            dataArray.some(function(dataItem) {
+                if (dataItem && dataItem[columnName] === columnValue) {
+                    result = dataItem;
+                    return true;
+                }
+                return false;
+            });
+            return result;
+        };
+    }
+
+    //=============================================================================
     // パラメータの取得と整形
     //=============================================================================
     var paramParamName = getParamString(['ParamName', 'パラメータ名']);
@@ -249,8 +280,9 @@
 //    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 //    Game_Interpreter.prototype.pluginCommand = function(command, args) {
 //        _Game_Interpreter_pluginCommand.apply(this, arguments);
+//        if (!command.match(new RegExp('^' + metaTagPrefix))) return;
 //        try {
-//            this.pluginCommand${NAME}(command, args);
+//            this.pluginCommand${NAME}(command.replace(metaTagPrefix, ''), args);
 //        } catch (e) {
 //            if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
 //                var window = require('nw.gui').Window.get();

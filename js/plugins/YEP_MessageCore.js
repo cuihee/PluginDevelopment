@@ -11,7 +11,7 @@ Yanfly.Message = Yanfly.Message || {};
 
 //=============================================================================
  /*:
- * @plugindesc v1.10 Adds more features to the Message Window to customized
+ * @plugindesc v1.13 Adds more features to the Message Window to customized
  * the way your messages appear and functions.
  * @author Yanfly Engine Plugins
  *
@@ -84,6 +84,16 @@ Yanfly.Message = Yanfly.Message || {};
  * @desc This is the minimum size achieved by \{.
  * Default: 12
  * @default 12
+ *
+ * @param Font Outline
+ * @desc This is the default font outline width for messages.
+ * Default: 4
+ * @default 4
+ *
+ * @param Maintain Font
+ * @desc When changing the font name or size, maintain for following
+ * messages. NO - false     YES - true
+ * @default false
  *
  * @param ---Name Box---
  * @default
@@ -290,6 +300,20 @@ Yanfly.Message = Yanfly.Message || {};
  * Changelog
  * ============================================================================
  *
+ * Version 1.13:
+ * - Added 'Maintain Font' plugin parameter under the Font category. This will
+ * allow you to use text codes \fn<x> and \fs[x] to permanently change the font
+ * of your messages until you use it again. \fr will reset them to the plugin's
+ * default parameter settings.
+ *
+ * Version 1.12:
+ * - 'Word Wrap Space' parameter no longer leaves a space at the beginning of
+ * each message.
+ *
+ * Version 1.11:
+ * - Added 'Font Outline' parameter for the plugin parameters. This adjusts the
+ * font outline width used by default for only message fonts.
+ *
  * Version 1.10:
  * - Updated the Message Row system for Extended Message Pack 1's Autosizing
  * feature to work with extended heights.
@@ -358,6 +382,8 @@ Yanfly.Param.MSGFontSize = Number(Yanfly.Parameters['Font Size']);
 Yanfly.Param.MSGFontSizeChange = String(Yanfly.Parameters['Font Size Change']);
 Yanfly.Param.MSGFontChangeMax = String(Yanfly.Parameters['Font Changed Max']);
 Yanfly.Param.MSGFontChangeMin = String(Yanfly.Parameters['Font Changed Min']);
+Yanfly.Param.MSGFontOutline = Number(Yanfly.Parameters['Font Outline']) || 4;
+Yanfly.Param.MSGFontMaintain = eval(String(Yanfly.Parameters['Maintain Font']));
 
 Yanfly.Param.MSGNameBoxBufferX = String(Yanfly.Parameters['Name Box Buffer X']);
 Yanfly.Param.MSGNameBoxBufferY = String(Yanfly.Parameters['Name Box Buffer Y']);
@@ -390,11 +416,18 @@ Yanfly.Message.Game_System_initialize =	Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
 		Yanfly.Message.Game_System_initialize.call(this);
 		this.initMessageSystem();
+    this.initMessageFontSettings();
 };
 
 Game_System.prototype.initMessageSystem = function() {
 		this._wordWrap = eval(Yanfly.Param.MSGWordWrap);
     this._fastForward = Yanfly.Param.MSGFFOn;
+};
+
+Game_System.prototype.initMessageFontSettings = function() {
+    this._msgFontName = Yanfly.Param.MSGFontName;
+    this._msgFontSize = Yanfly.Param.MSGFontSize;
+    this._msgFontOutline = Yanfly.Param.MSGFontOutline;
 };
 
 Game_System.prototype.messageRows = function() {
@@ -424,6 +457,36 @@ Game_System.prototype.isFastFowardEnabled = function() {
 Game_System.prototype.setFastFoward = function(state) {
     if (this._fastForward === undefined) this.initMessageSystem();
     this._fastForward = state;
+};
+
+Game_System.prototype.getMessageFontName = function() {
+    if (this._msgFontName === undefined) this.initMessageFontSettings();
+    return this._msgFontName;
+};
+
+Game_System.prototype.setMessageFontName = function(value) {
+    if (this._msgFontName === undefined) this.initMessageFontSettings();
+    this._msgFontName = value;
+};
+
+Game_System.prototype.getMessageFontSize = function() {
+    if (this._msgFontSize === undefined) this.initMessageFontSettings();
+    return this._msgFontSize;
+};
+
+Game_System.prototype.setMessageFontSize = function(value) {
+    if (this._msgFontSize === undefined) this.initMessageFontSettings();
+    this._msgFontSize = value;
+};
+
+Game_System.prototype.getMessageFontOutline = function() {
+    if (this._msgFontOutline === undefined) this.initMessageFontSettings();
+    return this._msgFontOutline;
+};
+
+Game_System.prototype.setMessageFontOutline = function(value) {
+    if (this._msgFontOutline === undefined) this.initMessageFontSettings();
+    this._msgFontOutline = value;
 };
 
 //=============================================================================
@@ -502,7 +565,7 @@ Window_Base.prototype.resetFontSettings = function() {
 		this.contents.fontBold = false;
 		this.contents.fontItalic = false;
 		this.contents.outlineColor = 'rgba(0, 0, 0, 0.5)';
-		this.contents.outlineWidth = 4;
+		this.contents.outlineWidth = $gameSystem.getMessageFontOutline();
 };
 
 Window_Base.prototype.textWidthEx = function(text) {
@@ -522,7 +585,7 @@ Window_Base.prototype.setWordWrap = function(text) {
 		this._wordWrap = false;
 		if (text.match(/<(?:WordWrap)>/i)) {
 			this._wordWrap = true;
-			text = text.replace(/<(?:WordWrap)>/gi, '\n');
+			text = text.replace(/<(?:WordWrap)>/gi, '');
 		}
 		if (this._wordWrap) {
       var replace = Yanfly.Param.MSGWrapSpace ? ' ' : '';
@@ -642,38 +705,44 @@ Window_Base.prototype.obtainEscapeString = function(textState) {
 Yanfly.Message.Window_Base_processEscapeCharacter =
 		Window_Base.prototype.processEscapeCharacter;
 Window_Base.prototype.processEscapeCharacter = function(code, textState) {
-		switch (code) {
-		case 'MSGCORE':
-				var id = this.obtainEscapeParam(textState);
-				if (id === 0) this.resetFontSettings();
-				if (id === 1) this.contents.fontBold = !this.contents.fontBold;
-				if (id === 2) this.contents.fontItalic = !this.contents.fontItalic;
-				break;
-		case 'FS':
-        this.contents.fontSize = this.obtainEscapeParam(textState);
-        break;
-    case 'FN':
-				var name = this.obtainEscapeString(textState);
-				this.contents.fontFace = name;
-        break;
-		case 'OC':
-				var id = this.obtainEscapeParam(textState);
-        this.contents.outlineColor = this.textColor(id);
-        break;
-		case 'OW':
-				this.contents.outlineWidth = this.obtainEscapeParam(textState);
-        break;
-    case 'PX':
-        textState.x = this.obtainEscapeParam(textState);
-        break;
-    case 'PY':
-        textState.y = this.obtainEscapeParam(textState);
-        break;
-		default:
-      Yanfly.Message.Window_Base_processEscapeCharacter.call(this,
-				code, textState);
-      break;
+	switch (code) {
+	case 'MSGCORE':
+		var id = this.obtainEscapeParam(textState);
+		if (id === 0) {
+      $gameSystem.initMessageFontSettings();
+      this.resetFontSettings();
     }
+		if (id === 1) this.contents.fontBold = !this.contents.fontBold;
+		if (id === 2) this.contents.fontItalic = !this.contents.fontItalic;
+		break;
+	case 'FS':
+    var size = this.obtainEscapeParam(textState);
+    this.contents.fontSize = size;
+    if (Yanfly.Param.MSGFontMaintain) $gameSystem.setMessageFontSize(size);
+    break;
+  case 'FN':
+		var name = this.obtainEscapeString(textState);
+		this.contents.fontFace = name;
+    if (Yanfly.Param.MSGFontMaintain) $gameSystem.setMessageFontName(name);
+    break;
+	case 'OC':
+		var id = this.obtainEscapeParam(textState);
+    this.contents.outlineColor = this.textColor(id);
+    break;
+	case 'OW':
+		this.contents.outlineWidth = this.obtainEscapeParam(textState);
+    break;
+  case 'PX':
+    textState.x = this.obtainEscapeParam(textState);
+    break;
+  case 'PY':
+    textState.y = this.obtainEscapeParam(textState);
+    break;
+	default:
+    Yanfly.Message.Window_Base_processEscapeCharacter.call(this,
+		 code, textState);
+    break;
+  }
 };
 
 Window_Base.prototype.makeFontBigger = function() {
@@ -768,11 +837,11 @@ Window_Help.prototype.setItem = function(item) {
 //=============================================================================
 
 Window_ChoiceList.prototype.standardFontFace = function() {
-    return Yanfly.Param.MSGFontName;
+    return $gameSystem.getMessageFontName();
 };
 
 Window_ChoiceList.prototype.standardFontSize = function() {
-    return Yanfly.Param.MSGFontSize;
+    return $gameSystem.getMessageFontSize();
 };
 
 Yanfly.Message.Window_ChoiceList_updatePlacement =
@@ -831,11 +900,11 @@ Window_EventItem.prototype.updatePlacement = function() {
 //=============================================================================
 
 Window_ScrollText.prototype.standardFontFace = function() {
-    return Yanfly.Param.MSGFontName;
+    return $gameSystem.getMessageFontName();
 };
 
 Window_ScrollText.prototype.standardFontSize = function() {
-    return Yanfly.Param.MSGFontSize;
+    return $gameSystem.getMessageFontSize();
 };
 
 //=============================================================================
@@ -886,11 +955,11 @@ Window_NameBox.prototype.windowHeight = function() {
 };
 
 Window_NameBox.prototype.standardFontFace = function() {
-    return Yanfly.Param.MSGFontName;
+    return $gameSystem.getMessageFontName();
 };
 
 Window_NameBox.prototype.standardFontSize = function() {
-    return Yanfly.Param.MSGFontSize;
+    return $gameSystem.getMessageFontSize();
 };
 
 Window_NameBox.prototype.update = function() {
@@ -1015,11 +1084,11 @@ Window_Message.prototype.newPage = function(textState) {
 };
 
 Window_Message.prototype.standardFontFace = function() {
-    return Yanfly.Param.MSGFontName;
+    return $gameSystem.getMessageFontName();
 };
 
 Window_Message.prototype.standardFontSize = function() {
-    return Yanfly.Param.MSGFontSize;
+    return $gameSystem.getMessageFontSize();
 };
 
 Window_Message.prototype.newLineX = function() {

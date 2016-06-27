@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.0 2016/06/15 スクリプト「data」で対象のオブジェクトを参照できる機能を追加
+//                  スクリプト評価時にエラーになった場合に異常終了しないよう修正
 // 1.0.1 2016/05/25 スクリプトに「>」「<」を使えるように修正
 // 1.0.0 2016/05/18 初版
 // ----------------------------------------------------------------------------
@@ -29,6 +31,13 @@
  * &lt; → <
  * &gt; → >
  *
+ * スクリプト中で「data」と記述すると
+ * 対象のアクター・エネミーオブジェクトを参照できます。
+ * 使いこなすにはスクリプトに関する一定の知識が必要です。
+ *
+ * 例:対象がID[1]のアクターの場合のみ有効になります。
+ * <TC1スクリプト:data.isActor() && data.actorId() === 1>
+ *
  * 2番目以降の特徴も同様に設定可能です。
  *
  * このプラグインにはプラグインコマンドはありません。
@@ -42,10 +51,6 @@
 (function () {
     'use strict';
     var metaTagPrefix = 'TC';
-    var metaTagDisConvert = {
-        "&lt;": "<",
-        "&gt;": ">"
-    };
 
     var getArgString = function (arg, upperFlg) {
         arg = convertEscapeCharacters(arg);
@@ -76,23 +81,27 @@
         if (text === null || text === undefined) {
             text = '';
         }
+        var metaTagDisConvert = {
+            "&lt;": "<",
+            "&gt;": ">"
+        };
         text = text.replace(/\&gt\;|\&lt\;/gi, function(value) {
             return metaTagDisConvert[value];
         }.bind(this));
         text = text.replace(/\\/g, '\x1b');
         text = text.replace(/\x1b\x1b/g, '\\');
         text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1]));
+            return $gameVariables.value(parseInt(arguments[1], 10));
         }.bind(this));
         text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1]));
+            return $gameVariables.value(parseInt(arguments[1], 10));
         }.bind(this));
         text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
-            var actor = parseInt(arguments[1]) >= 1 ? $gameActors.actor(parseInt(arguments[1])) : null;
+            var actor = parseInt(arguments[1], 10) >= 1 ? $gameActors.actor(parseInt(arguments[1], 10)) : null;
             return actor ? actor.name() : '';
         }.bind(this));
         text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
-            var actor = parseInt(arguments[1]) >= 1 ? $gameParty.members()[parseInt(arguments[1]) - 1] : null;
+            var actor = parseInt(arguments[1], 10) >= 1 ? $gameParty.members()[parseInt(arguments[1], 10) - 1] : null;
             return actor ? actor.name() : '';
         }.bind(this));
         text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
@@ -138,7 +147,14 @@
     Game_BattlerBase.prototype.isValidTraitScript = function(id, obj) {
         var metaValue = getMetaValues(obj, [id + 'スクリプト', id + 'Script']);
         if (!metaValue) return true;
-        return eval(getArgString(metaValue));
+        var data = this;
+        var result = false;
+        try {
+            result = eval(getArgString(metaValue));
+        } catch (e) {
+            console.error(e.message);
+        }
+        return result;
     };
 })();
 

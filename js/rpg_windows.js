@@ -3488,7 +3488,7 @@ Window_NameEdit.prototype.charWidth = function() {
 Window_NameEdit.prototype.left = function() {
     var nameCenter = (this.contentsWidth() + this.faceWidth()) / 2;
     var nameWidth = (this._maxLength + 1) * this.charWidth();
-    return Math.max(nameCenter - nameWidth / 2, this.contentsWidth() - nameWidth);
+    return Math.min(nameCenter - nameWidth / 2, this.contentsWidth() - nameWidth);
 };
 
 Window_NameEdit.prototype.itemRect = function(index) {

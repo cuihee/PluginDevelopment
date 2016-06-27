@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.0 2016/06/08 一つの装備で複数のスイッチ、変数を操作できるよう修正
+// 1.0.1 2016/06/03 スクリプトに「>」「<」を使えるように修正
 // 1.0.0 2016/04/03 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
@@ -32,6 +34,16 @@
  *
  * ・変数に設定される値です。
  *  <TOES変数設定値:3> // 装備時に3加算され、解除すると3減算されます。
+ *
+ * 一度に二つ以上のスイッチや変数を操作したい場合は項目名の後ろに
+ * 　数字を追加してください。(3以降も同様)
+ *  <TOESスイッチ対象:3>   // 3番のスイッチが操作対象
+ *  <TOESスイッチ対象2:5>  // 5番のスイッチも操作対象
+ *
+ *  注意！
+ *  指定する際は、番号に歯抜けがないようにしてください。
+ *  <TOESスイッチ対象:3>   // 3番のスイッチが操作対象
+ *  <TOESスイッチ対象3:5>  // 動作しない
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -70,20 +82,27 @@
 
     var convertEscapeCharactersAndEval = function(text, evalFlg) {
         if (text === null || text === undefined) text = '';
+        var metaTagDisConvert = {
+            "&lt;": "<",
+            "&gt;": ">"
+        };
+        text = text.replace(/\&gt\;|\&lt\;/gi, function(value) {
+            return metaTagDisConvert[value];
+        }.bind(this));
         text = text.replace(/\\/g, '\x1b');
         text = text.replace(/\x1b\x1b/g, '\\');
         text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1]));
+            return $gameVariables.value(parseInt(arguments[1], 10));
         }.bind(this));
         text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-            return $gameVariables.value(parseInt(arguments[1]));
+            return $gameVariables.value(parseInt(arguments[1], 10));
         }.bind(this));
         text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
-            var actor = parseInt(arguments[1]) >= 1 ? $gameActors.actor(parseInt(arguments[1])) : null;
+            var actor = parseInt(arguments[1], 10) >= 1 ? $gameActors.actor(parseInt(arguments[1], 10)) : null;
             return actor ? actor.name() : '';
         }.bind(this));
         text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
-            var actor = parseInt(arguments[1]) >= 1 ? $gameParty.members()[parseInt(arguments[1]) - 1] : null;
+            var actor = parseInt(arguments[1], 10) >= 1 ? $gameParty.members()[parseInt(arguments[1], 10) - 1] : null;
             return actor ? actor.name() : '';
         }.bind(this));
         text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
@@ -134,22 +153,37 @@
     };
 
     Game_Actor.prototype.onChangeEquipAndState = function(item, addedSign) {
-        var switchTarget = getMetaValues(item, ['スイッチ対象', 'SwitchTarget']);
-        if (switchTarget) {
-            var switchId = this.getVariableIdForToes(switchTarget, $dataSystem.switches.length - 1);
-            $gameSwitches.setValue(switchId, addedSign);
-        }
-        var variableTarget = getMetaValues(item, ['変数対象', 'VariableTarget']);
-        if (variableTarget) {
-            var variableId = this.getVariableIdForToes(variableTarget, $dataSystem.variables.length - 1);
-            var variableValue = getMetaValues(item, ['変数設定値', 'VariableValue']);
-            var resultValue = (variableValue ? getArgNumber(variableValue) : 1) * (addedSign ? 1 : -1);
-            $gameVariables.setValue(variableId, $gameVariables.value(variableId) + resultValue);
+        var index = 1;
+        while(index) {
+            if (this.controlVariable(item, addedSign, index === 1 ? '' : String(index))) {
+                index++;
+            } else {
+                index = 0;
+            }
         }
     };
 
+    Game_Actor.prototype.controlVariable = function(item, addedSign, indexString) {
+        var switchTarget = getMetaValues(item, ['スイッチ対象' + indexString, 'SwitchTarget' + indexString]);
+        var result = false;
+        if (switchTarget) {
+            var switchId = this.getVariableIdForToes(switchTarget, $dataSystem.switches.length - 1);
+            $gameSwitches.setValue(switchId, addedSign);
+            result = true;
+        }
+        var variableTarget = getMetaValues(item, ['変数対象' + indexString, 'VariableTarget' + indexString]);
+        if (variableTarget) {
+            var variableId = this.getVariableIdForToes(variableTarget, $dataSystem.variables.length - 1);
+            var variableValue = getMetaValues(item, ['変数設定値' + indexString, 'VariableValue' + indexString]);
+            var resultValue = (variableValue ? getArgNumber(variableValue) : 1) * (addedSign ? 1 : -1);
+            $gameVariables.setValue(variableId, $gameVariables.value(variableId) + resultValue);
+            result = true;
+        }
+        return result;
+    };
+
     Game_Actor.prototype.getVariableIdForToes = function(target, max) {
-        var actorId = this._actorId;
+        var actorId = this._actorId; // used in eval
         return eval(getArgString(target)).clamp(1, max);
     };
 })();

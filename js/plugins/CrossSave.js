@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.0.2 2016/06/02 認証ファイルの形式をJSONでも作成できるよう修正
+// 1.0.1 2016/05/29 ヘルプの記述ミスを修正
 // 1.0.0 2016/05/23 初版
 // ----------------------------------------------------------------------------
 // [Blog]   : http://triacontane.blogspot.jp/
@@ -18,7 +20,7 @@
  * @author トリアコンタン
  * 
  * @param ユーザID
- * @desc 本プラグインを利用するためのユーザIDです。MilkcocoaのユーザIDではありません。
+ * @desc 本プラグインを利用するためのユーザIDです。MilkcocoaのユーザIDではありません。12文字以下で指定してください。
  * @default
  *
  * @param ロード名称
@@ -53,6 +55,10 @@
  * @dir img/pictures/
  * @type file
  *
+ * @param 認証ファイル形式
+ * @desc 認証ファイルの形式をJSON形式で作成します。ブラウザ実行時にファイルをうまく読み込めない場合、ONにしてください。
+ * @default OFF
+ *
  * @help セーブデータをサーバ上にアップロード/ダウンロードして
  * 異なるプラットフォーム間で共有します。
  *
@@ -70,19 +76,20 @@
  * 長期的な保管場所としてサーバ上にファイルを保存するのは
  * 避けてください。
  *
- * BssS(Backend as a service)にMilkcocoa(https://mlkcca.com/)を使用していますが、
+ * BaaS(Backend as a service)にMilkcocoa(https://mlkcca.com/)を使用していますが、
  * 新規に利用登録する必要はなく通常利用する上で意識する必要はありません。
  * 詳細は「使用方法」を参照してください。
  *
  * ・使用方法
  * 1. パラメータ「ユーザID」に任意の文字列を設定する。
+ *    入力できるのは12文字までです。
  * 例：triacontane
  *
  * 2. プロジェクトを保存(Ctrl+S)する。
  *
  * 3. イベントテスト(イベントエディタで右クリック)から
  *    以下のプラグインコマンドを実行する。
- * SV_MAKE_AUTH_DATA 任意のパスワード
+ * CS_MAKE_AUTH_DATA 任意のパスワード
  *
  * ログに「その名称のユーザはすでに登録されています。」が表示された場合は
  * パラメータ「ユーザID」に別の値を設定して再実行してください。
@@ -136,6 +143,12 @@
  *
  * 2. 本プラグインは試験運用中です。利用状況によっては
  * サービスの運用を停止せざるを得ない場合があります。
+ * 
+ * 3. 認証ファイルとはセキュリティを担保するものではなく
+ * 共有スペース内で同一のユーザIDが使用されないように区切る
+ * ためのものです。
+ * 他のサービスで使っているパスワードを流用することは
+ * 止めてください。
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -157,7 +170,8 @@ function CrossSaveManager() {
         SIZE_ERR: 'セーブデータの容量が大きすぎます。',
         NO_DATA : '指定したパスワードのセーブデータが見付かりませんでした。',
         FILE_ERR: 'ロードしたファイルが破損していました。',
-        WAITING : '通信中です。しばらくお待ちください。'
+        WAITING : '通信中です。しばらくお待ちください。',
+        UNKNOWN : '原因不明のエラーで処理が失敗しました。'
     };
 
     var getCommandName = function(command) {
@@ -219,6 +233,7 @@ function CrossSaveManager() {
     var paramAddCommandTitle = getParamBoolean(['AddCommandTitle', 'タイトルに追加']);
     var paramAddCommandFile  = getParamBoolean(['AddCommandFile', 'ファイルに追加']);
     var paramBackPicture     = getParamString(['BackPicture', '背景ピクチャ']);
+    var paramAuthFileFormat  = getParamBoolean(['AuthFileFormat', '認証ファイル形式']);
 
     //=============================================================================
     // Game_Interpreter
@@ -818,7 +833,7 @@ function CrossSaveManager() {
     // CrossSaveManager
     //  クロスセーブのためにMilkCocoaとの通信を行います。
     //=============================================================================
-    CrossSaveManager.authFileName    = 'CrossSave.rpgdata';
+    CrossSaveManager.authFileName    = (paramAuthFileFormat ? 'CrossSave.json' : 'CrossSave.rpgdata');
     CrossSaveManager.timeOutSecond   = 10;
     CrossSaveManager._milkCocoaUrl   = 'https://cdn.rawgit.com/triacontane/RPGMakerMV/master/milkcocoa.js';
     CrossSaveManager._milkCocoaApiId = 'leadiomt9dk1.mlkcca.com';
@@ -908,6 +923,7 @@ function CrossSaveManager() {
         this.addLoadListener(function() {
             this.showDevTools();
             if (!paramUserId) this.terminate('パラメータ「ユーザID」を指定してください。');
+            if (paramUserId.length > 12) this.terminate('パラメータ「ユーザID」は12文字以下で指定してください。');
             this.getAuthData(function(err) {
                 if (err) {
                     this._authData.set(paramUserId, {pass: pass}, function() {
@@ -953,8 +969,8 @@ function CrossSaveManager() {
         xhr.overrideMimeType('application/json');
         xhr.onload  = function() {
             if (xhr.status < 400) {
-                var json                   = LZString.decompressFromBase64(xhr.responseText);
-                CrossSaveManager._authFile = JsonEx.parse(json);
+                var data                   = LZString.decompressFromBase64(xhr.responseText);
+                CrossSaveManager._authFile = JsonEx.parse(paramAuthFileFormat ? xhr.responseText : data);
                 onLoad();
             }
         };
@@ -1035,8 +1051,14 @@ function CrossSaveManager() {
     };
 
     CrossSaveManager.setMainData = function(param, data) {
-        this._mainData.set(paramUserId + ':' + this._password + ':' + param, data,
-            this.onProcessSuccess.bind(this, null),
+        this._mainData.set(paramUserId + ':' + this._password + ':' + param, data, function(err) {
+            if (!err) {
+                this.onProcessSuccess();
+            } else {
+                this.outLog(err);
+                this.onProcessFailure(localMessage.UNKNOWN);
+            }
+        }.bind(this),
             this.onProcessFailure.bind(this, localMessage.REJECT)
         );
         this._processCount++;
@@ -1098,17 +1120,7 @@ function CrossSaveManager() {
         if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath);
         }
-        fs.writeFileSync(filePath, data);
-    };
-
-    StorageManager.loadCrossSaveAuthFile = function() {
-        var data     = null;
-        var fs       = require('fs');
-        var filePath = this.authFileDirectoryPath() + CrossSaveManager.authFileName;
-        if (fs.existsSync(filePath)) {
-            data = fs.readFileSync(filePath, {encoding: 'utf8'});
-        }
-        return LZString.decompressFromBase64(data);
+        fs.writeFileSync(filePath, paramAuthFileFormat ? json : data);
     };
 
     StorageManager.removeCrossSaveAuthFile = function() {
