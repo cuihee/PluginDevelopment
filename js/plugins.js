@@ -43,6 +43,6 @@ var $plugins =
 {"name":"BattlerGraphicExtend","status":true,"description":"バトラーグラフィック表示拡張プラグイン","parameters":{}},
 {"name":"GeneralTrigger","status":true,"description":"トリガープラグイン","parameters":{"ニューゲーム":"51","コンティニュー":"52","オプション画面":"53","メニュー画面":"54","セーブ画面":"55","戦闘画面":"56","ショップ画面":"57","別マップ移動":"58","アイテム増減":"59","武器増減":"60","防具増減":"61","アイテムID":"50","アイテム個数":"51","メンバー加入":"62","メンバー離脱":"63","アクターID":"52"}},
 {"name":"TemplateEvent","status":true,"description":"テンプレートイベントプラグイン","parameters":{"テンプレートマップID":"26","イベントIDを維持":"OFF","グラフィック置換":"ON"}},
-{"name":"FontLoad","status":true,"description":"フォントロードプラグイン","parameters":{"フォント名1":"baseballpark","フォントURL1":"fonts/baseballpark.ttf","フォント名2":"dekisokonaifont","フォントURL2":"fonts/dekisokonaifont.ttf","フォント名3":"","フォントURL3":"","ロード完了まで待機":"ON"}},
+{"name":"FontLoad","status":true,"description":"フォントロードプラグイン","parameters":{"フォント名1":"minamoji","フォントURL1":"fonts/minamoji.ttf","フォント名2":"","フォントURL2":"","フォント名3":"","フォントURL3":"","ロード完了まで待機":"ON"}},
 {"name":"ThroughFailedToLoad","status":true,"description":"ロード失敗エラーのすり抜けプラグイン","parameters":{"テストプレー時無効":"OFF"}}
 ];
