@@ -752,11 +752,10 @@ StorageManager.removeWebStorage = function(savefileId) {
 };
 
 StorageManager.localFileDirectoryPath = function() {
-    var path = window.location.pathname.replace(/(\/www|)\/[^\/]*$/, '/save/');
-    if (path.match(/^\/([A-Z]\:)/)) {
-        path = path.slice(1);
-    }
-    return decodeURIComponent(path);
+    var path = require('path');
+
+    var base = path.dirname(process.mainModule.filename);
+    return path.join(base, 'save/');
 };
 
 StorageManager.localFilePath = function(savefileId) {
