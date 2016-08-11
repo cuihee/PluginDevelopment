@@ -53,7 +53,7 @@ var $plugins =
 {"name":"RetryBattle","status":true,"description":"戦闘リトライプラグイン","parameters":{"雑魚敵でリトライ可能":"ON","ボス敵でリトライ可能":"ON","コマンドリトライ":"リトライ","コマンドロード":"ロード","コマンドタイトル":"タイトルへ","ウィンドウY座標":"448","メニュー画面を表示":"ON","メッセージ":"\\i[1]\\c[2]あなたは死にました\\c[0]\\i[1]","メッセージY座標":"360","フォントサイズ":"32"}},
 {"name":"ParamTransfer","status":true,"description":"パラメータ変換プラグイン","parameters":{}},
 {"name":"FloatVariables","status":true,"description":"変数の小数演算プラグイン","parameters":{"小数変数開始位置":"25","小数変数終了位置":"26"}},
-{"name":"GraphicalDesignMode","status":true,"description":"GUI画面デザインプラグイン\r\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"デザインモード":"OFF","自動保存":"OFF","モバイル版作成":"ON","モバイル偽装":"OFF","ウィンドウ透過":"OFF","グリッドサイズ":"48","パディング":"","フォントサイズ":"","行の高さ":"","背景透明度":""}},
+{"name":"GraphicalDesignMode","status":true,"description":"GUI画面デザインプラグイン\r\nパラメータを変更したら「プロジェクトの保存」（Ctrl+S）","parameters":{"デザインモード":"OFF","自動保存":"OFF","モバイル版作成":"OFF","モバイル偽装":"OFF","ウィンドウ透過":"OFF","グリッドサイズ":"48","パディング":"","フォントサイズ":"","行の高さ":"","背景透明度":""}},
 {"name":"StateRingIcon","status":true,"description":"リングステートプラグイン","parameters":{"X半径":"48","Y半径":"16","周期":"60","反時計回り":"OFF"}},
 {"name":"TemplateEvent","status":true,"description":"テンプレートイベントプラグイン","parameters":{"テンプレートマップID":"26","イベントIDを維持":"OFF","グラフィック置換":"OFF"}},
 {"name":"EventReSpawn","status":true,"description":"イベント動的生成プラグイン","parameters":{}}
