@@ -6,6 +6,11 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.4.7 2016/08/08 タッチ操作時にたまに同じ場所を延々とループしてしまう現象の修正
+// 1.4.6 2016/07/30 場所移動やイベント位置の設定で半歩位置に移動できるよう修正
+// 1.4.5 2016/07/22 イベントの複数同時起動を抑制する設定を追加
+// 1.4.4 2016/07/02 半歩位置にいる場合に地形タグとリージョンIDの取得値が0になってしまう不具合を修正
+// 1.4.3 2016/06/30 タッチ操作によるマップ移動でイベント起動できない場合がある問題を修正
 // 1.4.2 2016/06/08 PD_8DirDash.jsと組み合わせて斜め移動グラフィックを反映するよう修正
 // 1.4.1 2016/05/20 ダメージ床や茂みで上半分のみ接している場合は無効にするよう変更
 // 1.4.0 2016/05/20 トリガー領域を上下左右で細かく指定できる機能を追加
@@ -75,6 +80,10 @@
  * @desc 下半分のタイルのみ通行不可となるリージョンIDです。0を指定すると無効になります。
  * @default 0
  *
+ * @param MultiStartDisable
+ * @desc トリガー条件を満たすイベントが同時に複数存在する場合にIDがもっとも小さいイベントのみを起動します。
+ * @default OFF
+ *
  * @help Moving distance in half.
  *
  * Plugin command
@@ -89,7 +98,7 @@
  * <HMThroughDisable> -> Disable half through.
  * <HMTriggerExpansion:ON> -> Expansion trigger area ON
  * <HMTriggerExpansion:OFF> -> Expansion trigger area OFF
- * <HMExpansionArea:1,1.1,1> -> Expansion trigger area(down,left,right,up)
+ * <HMExpansionArea:1,1,1,1> -> Expansion trigger area(down,left,right,up)
  *
  * This plugin is released under the MIT License.
  */
@@ -141,6 +150,10 @@
  * @desc 下半分のタイルのみ通行不可となるリージョンIDです。0を指定すると無効になります。
  * @default 0
  *
+ * @param イベント複数起動防止
+ * @desc トリガー条件を満たすイベントが同時に複数存在する場合にIDがもっとも小さいイベントのみを起動します。
+ * @default OFF
+ *
  * @help キャラクターの移動単位が1タイルの半分になります。
  * 半歩移動が有効なら、乗り物以外は全て半歩移動になります。
  *
@@ -180,10 +193,10 @@
  * 上記以外の場合、個別にトリガー領域を設定することができます。
  * 以下のとおり記述してください。
  * // 下、左、右、上方向にそれぞれ1マス、2マス、3マス、4マス拡大したい場合
- * <HM拡大領域:1,2.3,4>
+ * <HM拡大領域:1,2,3,4>
  *
  * // 下、左、右、上方向にそれぞれ0.5マス、1マス、1マス、0.5マス拡大したい場合
- * <HM拡大領域:0.5,1.1,0.5>
+ * <HM拡大領域:0.5,1,1,0.5>
  *
  * 何も記述しないと、上下左右に半マスずつトリガー領域が拡張されます。
  *
@@ -194,12 +207,27 @@
  * <HM高さ:3>
  * <HMHeight:3>
  *
- * PD_8DirDash.jsと組み合わせると、半歩移動に
+ * ・他プラグインとの連携に関して
+ *
+ * 1. PD_8DirDash.jsと組み合わせると半歩移動に
  * グラフィック変更を伴う8方向移動機能が反映されます。
  *
  * 配布元：http://pixeldog.x.fc2.com/material_script.html
  *
- * 当該プラグインを使用する場合は、配布元の規約をご確認ください。
+ * 2. OverpassTile.jsと組み合わせると半歩移動に
+ * 立体交差を適用できます。
+ *
+ * 配布元：公式サンプルゲーム「ニナと鍵守の勇者」に収録
+ *
+ * OverpassTile.jsを当プラグインより上に定義してください。
+ *
+ * 3. FloatVariables.jsと組み合わせると半歩位置に場所移動したり
+ * イベント位置を設定したりできます。
+ *
+ * 配布元：半歩移動プラグインと同じ配布元です。
+ *
+ * 他のプラグインと併用する場合は、それぞれの配布元の規約や注意事項を
+ * あらかじめご確認ください。
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -261,7 +289,7 @@
         var values = getArgArrayString(args, false);
         if (arguments.length < 2) min = -Infinity;
         if (arguments.length < 3) max = Infinity;
-        for (var i = 0; i < values.length; i++) values[i] = (parseFloat(values[i], 10) || 0).clamp(min, max);
+        for (var i = 0; i < values.length; i++) values[i] = (parseFloat(values[i]) || 0).clamp(min, max);
         return values;
     };
 
@@ -302,6 +330,7 @@
     var paramUpperNpRegionId    = getParamNumber(['UpperNpRegionId', '上半分移動不可Region'], 0);
     var paramLowerCpTerrainTag  = getParamNumber(['LowerNpTerrainTag', '下半分移動不可地形'], 0);
     var paramLowerCpRegionId    = getParamNumber(['LowerNpRegionId', '下半分移動不可Region'], 0);
+    var paramMultiStartDisable  = getParamBoolean(['MultiStartDisable', 'イベント複数起動防止']);
 
     //=============================================================================
     // ローカル変数
@@ -459,6 +488,28 @@
             result = _Game_Map_checkLayeredTilesFlags.apply(this, arguments);
         }
         return result;
+    };
+
+    var _Game_Map_terrainTag = Game_Map.prototype.terrainTag;
+    Game_Map.prototype.terrainTag = function(x, y) {
+        if (this.isHalfPos(x)) {
+            return this.terrainTag(x - Game_Map.tileUnit, y) || this.terrainTag(x + Game_Map.tileUnit, y);
+        }
+        if (this.isHalfPos(y)) {
+            return this.terrainTag(x, y - Game_Map.tileUnit) || this.terrainTag(x, y + Game_Map.tileUnit);
+        }
+        return _Game_Map_terrainTag.apply(this, arguments);
+    };
+
+    var _Game_Map_regionId = Game_Map.prototype.regionId;
+    Game_Map.prototype.regionId = function(x, y) {
+        if (this.isHalfPos(x)) {
+            return this.regionId(x - Game_Map.tileUnit, y) || this.regionId(x + Game_Map.tileUnit, y);
+        }
+        if (this.isHalfPos(y)) {
+            return this.regionId(x, y - Game_Map.tileUnit) || this.regionId(x, y + Game_Map.tileUnit);
+        }
+        return _Game_Map_regionId.apply(this, arguments);
     };
 
     //=============================================================================
@@ -749,6 +800,27 @@
         return $gameMap.distance(this.x, this.y, character.x, character.y);
     };
 
+    var _Game_CharacterBase_setPosition          = Game_CharacterBase.prototype.setPosition;
+    Game_CharacterBase.prototype.setPosition = function(x, y) {
+        _Game_CharacterBase_setPosition.apply(this, arguments);
+        if (this.isHalfMove()) {
+            this._x = x;
+            this._y = y;
+        }
+    };
+
+    //=============================================================================
+    // Game_Character
+    //  タッチ移動の動作を調整します。
+    //=============================================================================
+    var _Game_Character_findDirectionTo = Game_Character.prototype.findDirectionTo;
+    Game_Character.prototype.findDirectionTo = function(goalX, goalY) {
+        localHalfPositionCount++;
+        var result = _Game_Character_findDirectionTo.apply(this, arguments);
+        localHalfPositionCount--;
+        return result;
+    };
+
     //=============================================================================
     // Game_Player
     //  8方向移動に対応させます。
@@ -825,11 +897,13 @@
     Game_Player.prototype.startMapEvent = function(x, y, triggers, normal) {
         _Game_Player_startMapEvent.apply(this, arguments);
         if (!$gameMap.isEventRunning()) {
-            $gameMap.events().forEach(function(event) {
+            $gameMap.events().some(function(event) {
                 if (event.isTriggerExpansion(x, y) && event.isTriggerIn(triggers) &&
                     event.isNormalPriority() === normal && (event.isCollidedFromPlayer() || !event.isNormalPriority())) {
                     event.start();
+                    if (event.isStarting() && paramMultiStartDisable) return true;
                 }
+                return false;
             });
         }
     };
@@ -847,6 +921,28 @@
         } else {
             _Game_Player_startMapEvent2.apply(this, arguments);
         }
+    };
+
+    var _Game_Player_triggerTouchAction = Game_Player.prototype.triggerTouchAction;
+    Game_Player.prototype.triggerTouchAction = function() {
+        var result = _Game_Player_triggerTouchAction.apply(this, arguments);
+        if (!result && $gameTemp.isDestinationValid()) {
+            var direction = this.direction();
+            var x1 = this.x;
+            var y1 = this.y;
+            var x2 = $gameMap.roundHalfXWithDirection(x1, direction);
+            var y2 = $gameMap.roundHalfYWithDirection(y1, direction);
+            var x3 = $gameMap.roundXWithDirection(x2, direction);
+            var y3 = $gameMap.roundYWithDirection(y2, direction);
+            var destinationX = $gameTemp.destinationX();
+            var destinationY = $gameTemp.destinationY();
+            if (Math.abs(destinationX - x2) <= Game_Map.tileUnit && Math.abs(destinationY - y2) <= Game_Map.tileUnit) {
+                return this.triggerTouchActionD2(x2, y2);
+            } else if (Math.abs(destinationX - x3) <= Game_Map.tileUnit && Math.abs(destinationY - y3) <= Game_Map.tileUnit) {
+                return this.triggerTouchActionD3(x2, y2);
+            }
+        }
+        return result;
     };
 
     Game_Player.prototype.isStartingPreparedMapEvent = function(x, y) {
@@ -1074,8 +1170,8 @@
     //  移動ルート強制中は半歩移動を無効にします。
     //=============================================================================
     Game_Character.prototype.isHalfMove = function() {
-        return (Game_CharacterBase.prototype.isHalfMove.call(this) && (!this._moveRouteForcing || !paramDisableForcing)) ||
-            this.isHalfPosX() || this.isHalfPosY();
+        return (Game_CharacterBase.prototype.isHalfMove.call(this) &&
+            (!this._moveRouteForcing || !paramDisableForcing)) || this.isHalfPosX() || this.isHalfPosY();
     };
 
     //=============================================================================

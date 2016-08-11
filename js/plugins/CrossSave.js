@@ -6,6 +6,10 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.0.6 2016/07/12 ネットワークセーブの限界容量を緩和
+// 1.0.5 2016/07/02 「ファイルに追加」が無効な場合にセーブ画面でのカーソル初期位置がひとつずれる問題の修正
+// 1.0.4 2016/06/29 追加でネットワークエラー対応
+// 1.0.3 2016/06/28 ゲーム中にネットワークが切断された場合にエラーになる現象を修正
 // 1.0.2 2016/06/02 認証ファイルの形式をJSONでも作成できるよう修正
 // 1.0.1 2016/05/29 ヘルプの記述ミスを修正
 // 1.0.0 2016/05/23 初版
@@ -326,44 +330,44 @@ function CrossSaveManager() {
         }
     };
 
-    //=============================================================================
-    // Scene_File
-    //  ネットワークセーブ画面の呼び出しを追加します。
-    //=============================================================================
-    var _Scene_File_savefileId      = Scene_File.prototype.savefileId;
-    Scene_File.prototype.savefileId = function() {
-        return _Scene_File_savefileId.apply(this, arguments) - (paramAddCommandFile ? 1 : 0);
-    };
-
-    Scene_File.prototype.isCrossSave = function() {
-        return this._listWindow.index() === 0 && paramAddCommandFile;
-    };
-
-    //=============================================================================
-    // Scene_Save
-    //  ネットワークセーブ画面の呼び出しを追加します。
-    //=============================================================================
-    var _Scene_Save_onSavefileOk      = Scene_Save.prototype.onSavefileOk;
-    Scene_Save.prototype.onSavefileOk = function() {
-        if (this.isCrossSave()) {
-            SoundManager.playOk();
-            SceneManager.push(Scene_Password);
-            SceneManager.prepareNextScene('save');
-        } else {
-            _Scene_Save_onSavefileOk.apply(this, arguments);
-        }
-    };
-
-    var _Scene_Save_firstSavefileIndex      = Scene_Save.prototype.firstSavefileIndex;
-    Scene_Save.prototype.firstSavefileIndex = function() {
-        if (SceneManager.isPreviousScene(Scene_Password)) {
-            return 0;
-        } else {
-            return _Scene_Save_firstSavefileIndex.apply(this, arguments) + 1;
-        }
-    };
-
     if (paramAddCommandFile) {
+        //=============================================================================
+        // Scene_File
+        //  ネットワークセーブ画面の呼び出しを追加します。
+        //=============================================================================
+        var _Scene_File_savefileId      = Scene_File.prototype.savefileId;
+        Scene_File.prototype.savefileId = function() {
+            return _Scene_File_savefileId.apply(this, arguments) - 1;
+        };
+
+        Scene_File.prototype.isCrossSave = function() {
+            return this._listWindow.index() === 0;
+        };
+        
+        //=============================================================================
+        // Scene_Save
+        //  ネットワークセーブ画面の呼び出しを追加します。
+        //=============================================================================
+        var _Scene_Save_onSavefileOk      = Scene_Save.prototype.onSavefileOk;
+        Scene_Save.prototype.onSavefileOk = function() {
+            if (this.isCrossSave()) {
+                SoundManager.playOk();
+                SceneManager.push(Scene_Password);
+                SceneManager.prepareNextScene('save');
+            } else {
+                _Scene_Save_onSavefileOk.apply(this, arguments);
+            }
+        };
+
+        var _Scene_Save_firstSavefileIndex      = Scene_Save.prototype.firstSavefileIndex;
+        Scene_Save.prototype.firstSavefileIndex = function() {
+            if (SceneManager.isPreviousScene(Scene_Password)) {
+                return 0;
+            } else {
+                return _Scene_Save_firstSavefileIndex.apply(this, arguments) + 1;
+            }
+        };
+
         //=============================================================================
         // Scene_Load
         //  ネットワークロード画面の呼び出しを追加します。
@@ -835,12 +839,13 @@ function CrossSaveManager() {
     //=============================================================================
     CrossSaveManager.authFileName    = (paramAuthFileFormat ? 'CrossSave.json' : 'CrossSave.rpgdata');
     CrossSaveManager.timeOutSecond   = 10;
+    CrossSaveManager.suppressOnError = false;
     CrossSaveManager._milkCocoaUrl   = 'https://cdn.rawgit.com/triacontane/RPGMakerMV/master/milkcocoa.js';
     CrossSaveManager._milkCocoaApiId = 'leadiomt9dk1.mlkcca.com';
     CrossSaveManager._loadListeners  = [];
     CrossSaveManager._authFile       = null;
     CrossSaveManager._fragmentLength = 4000;
-    CrossSaveManager._limitFragment  = 10;
+    CrossSaveManager._limitFragment  = 20;
 
     CrossSaveManager.initialize = function() {
         this._milkCocoa     = new MilkCocoa(this._milkCocoaApiId);
@@ -898,7 +903,15 @@ function CrossSaveManager() {
     };
 
     CrossSaveManager.getAuthData = function(onComplete) {
+        this.setSuppressOnError();
         this._authData.get(paramUserId, onComplete);
+    };
+
+    CrossSaveManager.setSuppressOnError = function() {
+        this.suppressOnError = true;
+        setTimeout(function() {
+            this.suppressOnError = false;
+        }.bind(this), 1000);
     };
 
     CrossSaveManager.loadAuthData = function(onComplete, onError) {
@@ -1025,6 +1038,7 @@ function CrossSaveManager() {
             this.setMainData(i, {data: saveGameBase64.substr(i * fragmentLength, fragmentLength)});
         }
         this.setMainData('Length', {data: dataNumber});
+        this.setSuppressOnError();
         return true;
     };
 
@@ -1036,6 +1050,7 @@ function CrossSaveManager() {
         }
         this.resetResultMessage();
         this.getMainData('Length', this.loadDataContents.bind(this), localMessage.NO_DATA);
+        this.setSuppressOnError();
     };
 
     CrossSaveManager.loadDataContents = function(datum) {
@@ -1051,26 +1066,26 @@ function CrossSaveManager() {
     };
 
     CrossSaveManager.setMainData = function(param, data) {
-        this._mainData.set(paramUserId + ':' + this._password + ':' + param, data, function(err) {
-            if (!err) {
-                this.onProcessSuccess();
-            } else {
-                this.outLog(err);
-                this.onProcessFailure(localMessage.UNKNOWN);
-            }
-        }.bind(this),
+        this._mainData.set(paramUserId + ':' + this._password + ':' + param, data, function(errorInfo) {
+                if (!errorInfo) {
+                    this.onProcessSuccess();
+                } else {
+                    this.outLog(errorInfo);
+                    this.onProcessFailure(localMessage.UNKNOWN);
+                }
+            }.bind(this),
             this.onProcessFailure.bind(this, localMessage.REJECT)
         );
         this._processCount++;
     };
 
     CrossSaveManager.getMainData = function(param, onComplete, errorMessage) {
-        this._mainData.get(paramUserId + ':' + this._password + ':' + param, function(err, datum) {
-            if (!err) {
+        this._mainData.get(paramUserId + ':' + this._password + ':' + param, function(errorInfo, datum) {
+            if (!errorInfo) {
                 this.onProcessSuccess();
                 onComplete(datum, param);
             } else {
-                this.outLog(err);
+                this.outLog(errorInfo);
                 this.onProcessFailure(errorMessage);
             }
         }.bind(this));
@@ -1163,6 +1178,12 @@ function CrossSaveManager() {
     SceneManager.initialize      = function() {
         PluginManager.loadOnlineScript(CrossSaveManager._milkCocoaUrl, CrossSaveManager.initialize.bind(CrossSaveManager));
         _SceneManager_initialize.apply(this, arguments);
+    };
+
+    var _SceneManager_onError = SceneManager.onError;
+    SceneManager.onError      = function(e) {
+        if (CrossSaveManager.suppressOnError) return;
+        _SceneManager_onError.apply(this, arguments);
     };
 
     //=============================================================================

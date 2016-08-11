@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.1 2016/07/13 表記方法を少しだけ変更
+// 1.1.0 2016/07/13 ローカル実行時、エラー情報のパスを出力しないよう修正
 // 1.0.1 2016/06/25 エラー発生時のリンク先を別画面で開くよう修正
 // 1.0.0 2016/05/14 初版
 // ----------------------------------------------------------------------------
@@ -118,7 +120,7 @@
     //=============================================================================
     var _Graphics__makeErrorHtml = Graphics._makeErrorHtml;
     Graphics._makeErrorHtml = function(name, message) {
-        arguments[1] = decodeURI(message);
+        arguments[1] = decodeURIComponent(message);
         return _Graphics__makeErrorHtml.apply(this, arguments);
     };
 
@@ -128,7 +130,14 @@
         if (this._errorPrinter) {
             this._makeMainMessage();
             if (paramHyperLink)    this._makeHyperLink();
-            if (paramOutputDetail) this._makeStackTrace(e.stack || e);
+            if (paramOutputDetail) {
+                var stack = String(e.stack) || '';
+                if (Utils.isNwjs()) {
+                    stack = stack.replace(/file:.*js\//g, '');
+                    stack = stack.replace(/ at /g, '<br/>');
+                }
+                this._makeStackTrace(stack);
+            }
         }
     };
 

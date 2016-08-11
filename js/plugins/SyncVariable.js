@@ -6,6 +6,8 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.3 2016/06/29 追加でネットワークエラー対応
+// 1.1.2 2016/06/28 ゲーム中にネットワークが切断された場合にエラーになる現象を修正
 // 1.1.1 2016/06/02 認証ファイルの形式をJSONでも作成できるよう修正
 // 1.1.0 2016/05/25 Milkcocoa側のAPI更新によりローカル環境で実行できなくなっていた問題を修正
 // 1.0.0 2016/04/29 初版
@@ -284,6 +286,7 @@ function SyncManager() {
     SyncManager.needDownload    = false;
     SyncManager.isDownloaded    = false;
     SyncManager.isExecute       = false;
+    SyncManager.suppressOnError = false;
     SyncManager._authFile       = null;
 
     SyncManager.initialize = function() {
@@ -331,15 +334,24 @@ function SyncManager() {
                 this.needDownload = false;
                 this._coolDown    = 60;
                 this.downloadVariables();
+                this.setSuppressOnError();
             }
             if (this.needUpload && this.isDownloaded) {
                 this.needUpload = false;
                 this._coolDown  = 60;
                 this.uploadVariables();
+                this.setSuppressOnError();
             }
         } else {
             this._coolDown--;
         }
+    };
+
+    SyncManager.setSuppressOnError = function() {
+        this.suppressOnError = true;
+        setTimeout(function() {
+            this.suppressOnError = false;
+        }.bind(this), 1000);
     };
 
     SyncManager.uploadVariables = function() {
@@ -368,6 +380,7 @@ function SyncManager() {
 
     SyncManager.getAuthData = function(onComplete) {
         this._authData.get(this.userId, onComplete);
+        this.setSuppressOnError();
     };
 
     SyncManager.loadAuthData = function(onComplete, onError) {
@@ -554,6 +567,12 @@ function SyncManager() {
     SceneManager.updateMain      = function() {
         _SceneManager_updateMain.apply(this, arguments);
         SyncManager.update();
+    };
+
+    var _SceneManager_onError = SceneManager.onError;
+    SceneManager.onError      = function(e) {
+        if (SyncManager.suppressOnError) return;
+        _SceneManager_onError.apply(this, arguments);
     };
 })();
 

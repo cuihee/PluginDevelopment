@@ -6,6 +6,9 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.4.2 2016/07/02 スクリプトからダイレクトで実行した場合も制御文字が反映されるよう修正（ただし余分にエスケープする必要あり）
+// 1.4.1 2016/06/29 制御文字「\{」で文字サイズを大きくした際、元のサイズに戻さないと正しいサイズで表示されない問題を修正
+// 1.4.0 2016/06/28 D_TEXT実行後に画像を指定してピクチャを表示した場合は画像を優先表示するよう仕様変更
 // 1.3.1 2016/06/07 描画文字が半角英数字のみかつフォントを未指定の場合に文字が描画されない不具合を修正
 // 1.3.0 2016/06/03 制御文字\oc[c] \ow[n]に対応
 // 1.2.2 2016/03/28 データベース情報を簡単に出力する制御文字を追加
@@ -36,6 +39,10 @@
  *  3 : イベントコマンド「ピクチャの表示」で「画像」を未選択に指定。
  * ※ 1の時点ではピクチャは表示されないので必ずセットで呼び出してください。
  * ※ ピクチャ表示前にD_TEXTを複数回実行すると、複数行表示できます。
+ *
+ * ※ ver1.4.0より、[D_TEXT]実行後に「ピクチャの表示」で「画像」を指定した場合は
+ *    動的文字列ピクチャ生成を保留として通常通り「画像」ピクチャが表示されるように
+ *    挙動が変更になりました。
  *
  * プラグインコマンド詳細
  *   イベントコマンド「プラグインコマンド」から実行。
@@ -160,7 +167,7 @@
             case 'D_TEXT' :
                 if (isNaN(args[args.length - 1]) || args.length === 1) args.push($gameScreen.dTextSize || 28);
                 var fontSize = getArgNumber(args.pop());
-                $gameScreen.setDTextPicture(getArgString(connectArgs(args), false), fontSize);
+                $gameScreen.setDTextPicture(connectArgs(args), fontSize);
                 break;
             case 'D_TEXT_SETTING':
                 switch (getCommandName(args[0])) {
@@ -199,7 +206,7 @@
 
     Game_Screen.prototype.setDTextPicture = function(value, size) {
         if (!this.dTextValue) this.dTextValue = [];
-        this.dTextValue.push(value);
+        this.dTextValue.push(getArgString(value, false));
         this.dTextSize = size;
     };
 
@@ -232,7 +239,7 @@
     var _Game_Picture_show = Game_Picture.prototype.show;
     Game_Picture.prototype.show = function(name, origin, x, y, scaleX,
                                            scaleY, opacity, blendMode) {
-        if ($gameScreen.isSettingDText()) {
+        if ($gameScreen.isSettingDText() && !name) {
             arguments[0] = Date.now().toString();
             var textValue = "";
             this.dTextInfo = $gameScreen.getDTextPictureInfo();
@@ -240,10 +247,10 @@
                 textValue +=  text + '\n';
             }.bind(this));
             this.dTextInfo.value = textValue;
+            $gameScreen.clearDTextPicture();
         } else {
             this.dTextInfo = null;
         }
-        $gameScreen.clearDTextPicture();
         _Game_Picture_show.apply(this, arguments);
     };
 
@@ -293,15 +300,20 @@
     Sprite_Picture.prototype.makeDynamicBitmap = function() {
         this.textWidths = [];
         this.hiddenWindow = SceneManager.getHiddenWindow();
-        if (this.dTextInfo.font) this.hiddenWindow.contents.fontFace = this.dTextInfo.font;
-        if (this.dTextInfo.size > 0) this.hiddenWindow.contents.fontSize = this.dTextInfo.size;
+        this.resetFontSettings();
         var bitmapVirtual = new Bitmap_Virtual();
         this._processText(bitmapVirtual);
+        this.resetFontSettings();
         this.bitmap = new Bitmap(bitmapVirtual.width, bitmapVirtual.height);
         if (this.dTextInfo.font) this.bitmap.fontFace = this.dTextInfo.font;
         if (this.dTextInfo.color) this.bitmap.fillAll(this.dTextInfo.color);
         this._processText(this.bitmap);
         this.hiddenWindow = null;
+    };
+
+    Sprite_Picture.prototype.resetFontSettings = function() {
+        if (this.dTextInfo.font) this.hiddenWindow.contents.fontFace = this.dTextInfo.font;
+        if (this.dTextInfo.size > 0) this.hiddenWindow.contents.fontSize = this.dTextInfo.size;
     };
 
     Sprite_Picture.prototype._processText = function(bitmap) {

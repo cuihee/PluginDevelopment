@@ -6,6 +6,10 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.3 2016/08/05 本体v1.3.0にて表示される警告を抑制
+// 1.1.2 2016/07/20 一部のウィンドウでプロパティロード後にコンテンツが再作成されない問題を修正
+// 1.1.1 2016/07/17 余白とフォントサイズの変更が、画面切り替え後に元に戻ってしまう問題を修正
+// 1.1.0 2016/07/11 メッセージウィンドウのみ位置変更を一時的に無効化するプラグインコマンドを追加
 // 1.0.2 2016/04/02 liply_memoryleak_patch.jsとの競合を解消
 // 1.0.1 2016/03/28 一部のウィンドウのプロパティを変更しようとするとエラーが発生する現象の修正
 // 1.0.0 2016/03/13 初版
@@ -135,7 +139,21 @@
  * 他のプラグインの使用状況によってウィンドウの位置やサイズが
  * 正しく保存されない場合があります。
  *
- * このプラグインにはプラグインコマンドはありません。
+ * プラグインコマンド詳細
+ *  イベントコマンド「プラグインコマンド」から実行。
+ *  （パラメータの間は半角スペースで区切る）
+ *
+ * GDM解除_メッセージウィンドウ
+ * GDM_UNLOCK_MESSAGE_WINDOW
+ *  メッセージウィンドウの位置変更を一時的に解除します。
+ *  プラグインで変更した座標が無効になり
+ *  イベント「メッセージ表示」で指定したウィンドウ位置が有効になります。
+ *
+ * GDM_LOCK_MESSAGE_WINDOW
+ * GDM固定_メッセージウィンドウ
+ *  メッセージウィンドウの位置変更を再度、有効にします。
+ *  プラグインで変更した座標が有効になり
+ *  イベント「メッセージ表示」で指定したウィンドウ位置は無視されます。
  *
  * 利用規約：
  *  作者に無断で改変、再配布が可能で、利用形態（商用、18禁利用等）
@@ -282,6 +300,7 @@ var $dataContainerProperties = null;
     // ユーザ書き換え領域 - 終了 -
     //=============================================================================
     var pluginName = 'GraphicalDesignMode';
+    var metaTagPrefix = 'GDM';
 
     var getParamNumber = function(paramNames, min, max) {
         var value = getParamOther(paramNames);
@@ -332,6 +351,10 @@ var $dataContainerProperties = null;
 
     var getClassName = function(object) {
         return object.constructor.toString().replace(/function\s+(.*)\s*\([\s\S]*/m, '$1');
+    };
+
+    var getCommandName = function(command) {
+        return (command || '').toUpperCase();
     };
 
     var paramDesignMode      = getParamBoolean(['DesignMode', 'デザインモード']);
@@ -436,7 +459,7 @@ var $dataContainerProperties = null;
                 '☆☆☆ようこそ、デザインモードで起動しました。☆☆☆',
                 'デザインモードでは、オブジェクトの配置やプロパティを自由に設定して実際のゲーム画面上から画面設計できます。',
                 '',
-                '--------------------操 作 方 法------------------------------------------------------------------------',
+                '--------------------操 作 方 法----------------------------------------------------------------------',
                 'ドラッグ&ドロップ ： ウィンドウや画像を掴んで好きな場所に再配置します。',
                 'Ctrl+マウス ： ウィンドウや画像がグリッドにスナップします。',
                 'Shift+マウス ： ウィンドウや画像がオブジェクトや画面端にスナップしなくなります。',
@@ -454,7 +477,7 @@ var $dataContainerProperties = null;
                 ' 6. ウィンドウの背景透明度',
                 ' 7. ウィンドウの行数',
                 ' 8. ウィンドウの背景画像ファイル名',
-                '-------------------------------------------------------------------------------------------------------',
+                '-----------------------------------------------------------------------------------------------------',
                 '以下の操作ログが表示されます。'
             ];
             logValue.forEach(function(value) {
@@ -618,20 +641,20 @@ var $dataContainerProperties = null;
         };
 
         //=============================================================================
-        // PIXI.DisplayObjectContainer
+        // PIXI.Container
         //  コンテナをドラッグ＆ドロップします。
         //=============================================================================
-        var _PIXI_DisplayObjectContainer_initialize = PIXI.DisplayObjectContainer.prototype.initialize;
-        PIXI.DisplayObjectContainer.prototype.initialize = function(x, y, width, height) {
+        var _PIXI_DisplayObjectContainer_initialize = PIXI.Container.prototype.initialize;
+        PIXI.Container.prototype.initialize = function(x, y, width, height) {
             _PIXI_DisplayObjectContainer_initialize.apply(this, arguments);
-            this._holding            = false;
-            this._dx                 = 0;
-            this._dy                 = 0;
-            this.moveDisable         = false;
-            this._positionCustomized = false;
+            this._holding      = false;
+            this._dx           = 0;
+            this._dy           = 0;
+            this.moveDisable   = false;
+            this._positionLock = false;
         };
 
-        PIXI.DisplayObjectContainer.prototype.processDesign = function() {
+        PIXI.Container.prototype.processDesign = function() {
             var result = false;
             if (!this.moveDisable) {
                 if (this.processPosition()) {
@@ -655,7 +678,7 @@ var $dataContainerProperties = null;
             return result;
         };
 
-        PIXI.DisplayObjectContainer.prototype.processPosition = function() {
+        PIXI.Container.prototype.processPosition = function() {
             if (this.isTouchEvent(TouchInput.isTriggered) || (this._holding && TouchInput.isPressed())) {
                 if (!this._holding) this.hold();
                 var x = TouchInput.x - this._dx;
@@ -670,9 +693,9 @@ var $dataContainerProperties = null;
                     x = this.updateSnapX(x);
                     y = this.updateSnapY(y);
                 }
-                this.position.x = x;
-                this.position.y = y;
-                this._positionCustomized = true;
+                this.position.x    = x;
+                this.position.y    = y;
+                this._positionLock = true;
                 return true;
             } else if (this._holding) {
                 this.release();
@@ -681,7 +704,7 @@ var $dataContainerProperties = null;
             return false;
         };
 
-        PIXI.DisplayObjectContainer.prototype.processOpacity = function() {};
+        PIXI.Container.prototype.processOpacity = function() {};
 
         Window_Base.prototype.processOpacity = function() {
             if (this.isTouchEvent(TouchInput.isCancelled)) {
@@ -694,7 +717,7 @@ var $dataContainerProperties = null;
             return false;
         };
 
-        PIXI.DisplayObjectContainer.prototype.processInput = function() {};
+        PIXI.Container.prototype.processInput = function() {};
 
         Window_Base.prototype.processInput = function() {
             if (this.isPreparedEvent()) {
@@ -719,9 +742,9 @@ var $dataContainerProperties = null;
             if (this._customLineNumber) this.height = this.fittingHeight(this._customLineNumber);
         };
 
-        PIXI.DisplayObjectContainer.prototype.processSetProperty = function(
+        PIXI.Container.prototype.processSetProperty = function(
             keyCode, propLabel, propName, min, max, callBack, stringFlg) {
-            if (this[propName] === undefined) return;
+            if (this[propName] === undefined) return null;
             if (Input.isTriggered(keyCode)) {
                 var result = window.prompt(propLabel + 'を入力してください。', this[propName].toString());
                 if (result || (stringFlg && result === '')) {
@@ -739,7 +762,7 @@ var $dataContainerProperties = null;
             return null;
         };
 
-        PIXI.DisplayObjectContainer.prototype.reDrawContents = function() {};
+        PIXI.Container.prototype.reDrawContents = function() {};
 
         Window_Base.prototype.reDrawContents = function() {
             this.refresh();
@@ -750,7 +773,7 @@ var $dataContainerProperties = null;
             this.updateCursor();
         };
 
-        PIXI.DisplayObjectContainer.prototype.isAnchorChanged = function() {
+        PIXI.Container.prototype.isAnchorChanged = function() {
             return false;
         };
 
@@ -758,7 +781,7 @@ var $dataContainerProperties = null;
             return this.anchor.x !== 0 || this.anchor.y !== 0;
         };
 
-        PIXI.DisplayObjectContainer.prototype.hold = function() {
+        PIXI.Container.prototype.hold = function() {
             this._holding = true;
             this._dx      = TouchInput.x - this.x;
             this._dy      = TouchInput.y - this.y;
@@ -766,33 +789,33 @@ var $dataContainerProperties = null;
         };
 
         Window_Base.prototype.hold = function() {
-            PIXI.DisplayObjectContainer.prototype.hold.call(this);
+            PIXI.Container.prototype.hold.call(this);
             this._windowBackSprite.setBlendColor([255,255,255,192]);
             this._windowContentsSprite.setBlendColor([255,128,0,192]);
         };
 
         Sprite.prototype.hold = function() {
-            PIXI.DisplayObjectContainer.prototype.hold.call(this);
+            PIXI.Container.prototype.hold.call(this);
             this.setBlendColor([255,255,255,192]);
         };
 
-        PIXI.DisplayObjectContainer.prototype.release = function() {
+        PIXI.Container.prototype.release = function() {
             this._holding = false;
             this.saveContainerInfo();
         };
 
         Window_Base.prototype.release = function() {
-            PIXI.DisplayObjectContainer.prototype.release.call(this);
+            PIXI.Container.prototype.release.call(this);
             this._windowBackSprite.setBlendColor([0,0,0,0]);
             this._windowContentsSprite.setBlendColor([0,0,0,0]);
         };
 
         Sprite.prototype.release = function() {
-            PIXI.DisplayObjectContainer.prototype.release.call(this);
+            PIXI.Container.prototype.release.call(this);
             this.setBlendColor([0,0,0,0]);
         };
 
-        PIXI.DisplayObjectContainer.prototype.updateSnapX = function(x) {
+        PIXI.Container.prototype.updateSnapX = function(x) {
             var minDistanceL = 16, minIndexL = -1, minDistanceR = 16, minIndexR = -1;
             var children = this.parent.children, endX = x + this.width;
             for (var i = 0, n = children.length; i < n; i++) {
@@ -819,7 +842,7 @@ var $dataContainerProperties = null;
             }
         };
 
-        PIXI.DisplayObjectContainer.prototype.updateSnapY = function(y) {
+        PIXI.Container.prototype.updateSnapY = function(y) {
             var minDistanceU = 16, minIndexU = -1, minDistanceD = 16, minIndexD = -1;
             var children = this.parent.children, endY = y + this.height;
             for (var i = 0, n = children.length; i < n; i++) {
@@ -846,7 +869,7 @@ var $dataContainerProperties = null;
             }
         };
 
-        PIXI.DisplayObjectContainer.prototype.isSameInstance = function() {
+        PIXI.Container.prototype.isSameInstance = function() {
             return false;
         };
 
@@ -858,7 +881,7 @@ var $dataContainerProperties = null;
             return objectContainer instanceof Sprite;
         };
 
-        PIXI.DisplayObjectContainer.prototype.isTouchPosInRect = function() {
+        PIXI.Container.prototype.isTouchPosInRect = function() {
             var tx = TouchInput.x;
             var ty = TouchInput.y;
             return (tx >= this.x && tx <= this.endX &&
@@ -919,7 +942,7 @@ var $dataContainerProperties = null;
             return Math.max(this.screenY(), this.screenY() + this.screenHeight());
         };
 
-        PIXI.DisplayObjectContainer.prototype.isTouchable = function() {
+        PIXI.Container.prototype.isTouchable = function() {
             return false;
         };
 
@@ -935,31 +958,31 @@ var $dataContainerProperties = null;
             return this.visible && this.bitmap != null && this.scale.x !== 0 && this.scale.y !== 0;
         };
 
-        PIXI.DisplayObjectContainer.prototype.isTouchEvent = function(triggerFunc) {
+        PIXI.Container.prototype.isTouchEvent = function(triggerFunc) {
             return this.isTouchable() && triggerFunc.call(TouchInput) && this.isTouchPosInRect();
         };
 
-        PIXI.DisplayObjectContainer.prototype.isPreparedEvent = function() {
+        PIXI.Container.prototype.isPreparedEvent = function() {
             return this.isTouchable() && this.isTouchPosInRect();
         };
 
-        PIXI.DisplayObjectContainer.prototype.isRangeX = function(x) {
+        PIXI.Container.prototype.isRangeX = function(x) {
             return this.x <= x && this.endX >= x;
         };
 
-        PIXI.DisplayObjectContainer.prototype.isRangeY = function(y) {
+        PIXI.Container.prototype.isRangeY = function(y) {
             return this.y <= y && this.endY >= y;
         };
 
-        PIXI.DisplayObjectContainer.prototype.isOverlapX = function(win) {
+        PIXI.Container.prototype.isOverlapX = function(win) {
             return this.isRangeX(win.x) || this.isRangeX(win.endX) || win.isRangeX(this.x) || win.isRangeX(this.endX);
         };
 
-        PIXI.DisplayObjectContainer.prototype.isOverlapY = function(win) {
+        PIXI.Container.prototype.isOverlapY = function(win) {
             return this.isRangeY(win.y) || this.isRangeY(win.endY) || win.isRangeY(this.y) || win.isRangeY(this.endY);
         };
 
-        Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'endX', {
+        Object.defineProperty(PIXI.Container.prototype, 'endX', {
             get: function() {
                 return this.x + this.width;
             },
@@ -969,7 +992,7 @@ var $dataContainerProperties = null;
             configurable: true
         });
 
-        Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'endY', {
+        Object.defineProperty(PIXI.Container.prototype, 'endY', {
             get: function() {
                 return this.y + this.height;
             },
@@ -1011,6 +1034,46 @@ var $dataContainerProperties = null;
             return true;
         };
     }
+
+    //=============================================================================
+    // Game_Interpreter
+    //  プラグインコマンドを追加定義します。
+    //=============================================================================
+    var _Game_Interpreter_pluginCommand      = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function(command, args) {
+        _Game_Interpreter_pluginCommand.apply(this, arguments);
+        if (!command.match(new RegExp('^' + metaTagPrefix))) return;
+        try {
+            this.pluginCommandGraphicalDesignMode(command.replace(metaTagPrefix, ''), args);
+        } catch (e) {
+            if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
+                var window = require('nw.gui').Window.get();
+                if (!window.isDevToolsOpen()) {
+                    var devTool = window.showDevTools();
+                    devTool.moveTo(0, 0);
+                    devTool.resizeTo(window.screenX + window.outerWidth, window.screenY + window.outerHeight);
+                    window.focus();
+                }
+            }
+            console.log('プラグインコマンドの実行中にエラーが発生しました。');
+            console.log('- コマンド名 　: ' + command);
+            console.log('- コマンド引数 : ' + args);
+            console.log('- エラー原因   : ' + e.stack || e.toString());
+        }
+    };
+
+    Game_Interpreter.prototype.pluginCommandGraphicalDesignMode = function(command) {
+        switch (getCommandName(command)) {
+            case '解除_メッセージウィンドウ' :
+            case '_UNLOCK_MESSAGE_WINDOW':
+                SceneManager._scene._messageWindow.unlockPosition();
+                break;
+            case '固定_メッセージウィンドウ' :
+            case '_LOCK_MESSAGE_WINDOW':
+                SceneManager._scene._messageWindow.lockPosition();
+                break;
+        }
+    };
 
     //=============================================================================
     // DataManager
@@ -1117,30 +1180,30 @@ var $dataContainerProperties = null;
     };
 
     //=============================================================================
-    // PIXI.DisplayObjectContainer
+    // PIXI.Container
     //  表示位置のセーブとロードを行います。
     //=============================================================================
-    Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'x', {
+    Object.defineProperty(PIXI.Container.prototype, 'x', {
         get: function() {
             return  this.position.x;
         },
         set: function(value) {
-            if (this._positionCustomized) return;
+            if (this._positionLock) return;
             this.position.x = value;
         }
     });
 
-    Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'y', {
+    Object.defineProperty(PIXI.Container.prototype, 'y', {
         get: function() {
             return  this.position.y;
         },
         set: function(value) {
-            if (this._positionCustomized) return;
+            if (this._positionLock) return;
             this.position.y = value;
         }
     });
 
-    PIXI.DisplayObjectContainer.prototype.loadContainerInfo = function() {
+    PIXI.Container.prototype.loadContainerInfo = function() {
         var sceneName    = SceneManager.getSceneName();
         var parentName   = getClassName(this.parent);
         var sceneInfo = $dataContainerProperties[sceneName];
@@ -1149,18 +1212,34 @@ var $dataContainerProperties = null;
             var key = [this.parent.getChildIndex(this), getClassName(this)];
             if (containerInfo && containerInfo[key]) {
                 this.loadProperty(containerInfo[key]);
-                this._positionCustomized = true;
+                this._positionLock = true;
             }
         }
     };
 
-    PIXI.DisplayObjectContainer.prototype.loadProperty = function(containerInfo) {
+    PIXI.Container.prototype.unlockPosition = function() {
+        this._positionLock    = false;
+        this._customPositionX = this.position.x;
+        this._customPositionY = this.position.y;
+    };
+
+    PIXI.Container.prototype.lockPosition = function() {
+        this._positionLock = true;
+        if (this._customPositionX) {
+            this.position.x = this._customPositionX;
+        }
+        if (this._customPositionY) {
+            this.position.y = this._customPositionY;
+        }
+    };
+
+    PIXI.Container.prototype.loadProperty = function(containerInfo) {
         this.position.x = containerInfo.x;
         this.position.y = containerInfo.y;
     };
 
     Window_Base.prototype.loadProperty = function(containerInfo) {
-        PIXI.DisplayObjectContainer.prototype.loadProperty.apply(this, arguments);
+        PIXI.Container.prototype.loadProperty.apply(this, arguments);
         this.width   = containerInfo.width;
         this.height  = containerInfo.height;
         this.opacity = containerInfo.opacity;
@@ -1169,6 +1248,10 @@ var $dataContainerProperties = null;
         this._customLineHeight   = containerInfo._customLineHeight;
         this._customBackOpacity  = containerInfo._customBackOpacity;
         this._customBackFileName = containerInfo._customBackFileName;
+        this.updatePadding();
+        this.resetFontSettings();
+        this.updateBackOpacity();
+        this.createContents();
         this.refresh();
         this.createBackSprite();
     };
@@ -1180,7 +1263,7 @@ var $dataContainerProperties = null;
         this.updateCursor();
     };
 
-    PIXI.DisplayObjectContainer.prototype.saveContainerInfo = function() {
+    PIXI.Container.prototype.saveContainerInfo = function() {
         var sceneName    = SceneManager.getSceneName();
         var parentName   = getClassName(this.parent);
         if (!$dataContainerProperties[sceneName]) $dataContainerProperties[sceneName] = {};
@@ -1195,13 +1278,13 @@ var $dataContainerProperties = null;
         }
     };
 
-    PIXI.DisplayObjectContainer.prototype.saveProperty = function(containerInfo) {
+    PIXI.Container.prototype.saveProperty = function(containerInfo) {
         containerInfo.x = this.x;
         containerInfo.y = this.y;
     };
 
     Window_Base.prototype.saveProperty = function(containerInfo) {
-        PIXI.DisplayObjectContainer.prototype.saveProperty.apply(this, arguments);
+        PIXI.Container.prototype.saveProperty.apply(this, arguments);
         containerInfo.width   = this.width;
         containerInfo.height  = this.height;
         containerInfo.opacity = this.opacity;

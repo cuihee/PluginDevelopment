@@ -6,6 +6,9 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.1 2016/08/07 YEP_AutoPassiveStates.jsとの競合を解消
+// 1.1.0 2016/07/01 バトラーを指定した色で点滅させる機能を追加
+// 1.0.2 2016/06/29 YEP_X_AnimatedSVEnemies.jsとの間で発生していた競合を解消
 // 1.0.1 2016/06/17 敵を倒したときにグラフィックが消滅しない不具合を修正
 //                  武器グラフィックにも不透明度と合成方法を適用するよう修正
 // 1.0.0 2016/06/17 初版
@@ -31,8 +34,17 @@
  * <BGEOpacity:n> n:Opacity(0..256)
  *
  * バトラーの色調を設定します。各要素を数値で指定します。
- * <BGETone:red,green,blue,gray> red:赤 green:緑 blue:青(-255..255) gray:グレー(0..255)
+ * <BGETone:r,g,b,g> r:赤 g:緑 b:青(-255..255) g:グレー(0..255)
  * 例:<BGETone:255,255,255,128>
+ *
+ * バトラーをゆるやかに点滅させます。各要素を数値で指定します。
+ * この処理はやや重いのでモバイル実行の場合は注意してください。
+ * <BGEFlash:r,g,b,a> r:赤 g:緑 b:青 a:強さ(0..255)
+ * 例:<BGEFlash:255,0,0,128>
+ *
+ * フラッシュ間隔を変更したい場合（小さいほど速く点滅し、標準は15です）
+ * <BGEFlashInterval:f> f:フレーム数
+ * 例:<BGEFlashInterval:30>
  *
  * バトラーの合成方法を設定します。
  * <BGEBlendMode:n> n:0[通常] n:1[加算] n:2[乗算] n:3[スクリーン]
@@ -67,8 +79,17 @@
  * 例：<BGE不透明度:128>
  *
  * バトラーの色調を設定します。各要素を数値で指定します。
- * <BGE色調:red,green,blue,gray> red:赤 green:緑 blue:青(-255..255) gray:グレー(0..255)
+ * <BGE色調:r,g,b,g> r:赤 g:緑 b:青(-255..255) g:グレー(0..255)
  * 例:<BGE色調:255,255,255,128>
+ *
+ * バトラーをゆるやかに点滅させます。各要素を数値で指定します。
+ * この処理はやや重いのでモバイル実行の場合は注意してください。
+ * <BGEフラッシュ:r,g,b,a> r:赤 g:緑 b:青 a:強さ(0..255)
+ * 例:<BGEフラッシュ:255,0,0,128>
+ *
+ * フラッシュ間隔を変更したい場合（小さいほど速く点滅し、標準は15です）
+ * <BGEフラッシュ間隔:f> f:フレーム数
+ * 例:<BGEフラッシュ間隔:30>
  *
  * バトラーの合成方法を設定します。
  * <BGE合成方法:n> n:0[通常] n:1[加算] n:2[乗算] n:3[スクリーン]
@@ -215,6 +236,7 @@
     };
 
     Game_BattlerBase.prototype.refreshGraphicInfo = function() {
+        if (!this._actorId && !this._enemyId) return;
         this.refreshFloating();
         this.refreshOpacity();
         this.refreshScaleX();
@@ -222,13 +244,14 @@
         this.refreshTone();
         this.refreshBlendMode();
         this.refreshMotionRate();
+        this.refreshBlendColor();
         this._refreshExecute = true;
     };
 
     Game_BattlerBase.prototype.refreshFloating = function() {
         var result = this.getStateMetaValuesForBge(['高度', 'Altitude']);
         if (!result) {
-            if (this.isFloating()) this.landingBattler();
+            if (this.isFloatingBattler()) this.landingBattler();
             return;
         }
         var altitude = getArgNumber(result, 0);
@@ -267,8 +290,15 @@
         this._tone = result ? getArgArrayNumber(result) : [0, 0, 0, 0];
     };
 
+    Game_BattlerBase.prototype.refreshBlendColor = function() {
+        var result               = this.getStateMetaValuesForBge(['フラッシュ', 'Flash']);
+        this._blendColor         = result ? getArgArrayNumber(result) : [0, 0, 0, 0];
+        result                   = this.getStateMetaValuesForBge(['フラッシュ間隔', 'FlashInterval']);
+        this._blendColorInterval = result ? getArgNumber(result) : 15;
+    };
+
     Game_BattlerBase.prototype.getAltitude = function() {
-        return this.isFloating() ? Math.floor(Math.sin(this._altitudeAnimeCount / 16) * 5) - this._altitude : 0;
+        return this.isFloatingBattler() ? Math.floor(Math.sin(this._altitudeAnimeCount / 16) * 5) - this._altitude : 0;
     };
 
     Game_BattlerBase.prototype.getOpacity = function() {
@@ -287,6 +317,14 @@
         return this._tone;
     };
 
+    Game_BattlerBase.prototype.getBlendColor = function() {
+        return this._blendColor;
+    };
+
+    Game_BattlerBase.prototype.getBlendColorInterval = function() {
+        return this._blendColorInterval;
+    };
+
     Game_BattlerBase.prototype.getBlendMode = function() {
         return this._blendMode;
     };
@@ -295,7 +333,7 @@
         return this._motionRate / 100;
     };
 
-    Game_BattlerBase.prototype.isFloating = function() {
+    Game_BattlerBase.prototype.isFloatingBattler = function() {
         return this._altitude > 0;
     };
 
@@ -321,7 +359,7 @@
     };
 
     Game_BattlerBase.prototype.updateFloating = function() {
-        this._floatingPrev = this.isFloating();
+        this._floatingPrev = this.isFloatingBattler();
         if (this.isNeedFloat()) {
             if (this.isHighest()) {
                 this._altitudeAnimeCount++;
@@ -343,6 +381,13 @@
     // Sprite_Battler
     //  ステートによるエフェクトを反映させます。
     //=============================================================================
+    var _Sprite_Battler_initMembers = Sprite_Battler.prototype.initMembers;
+    Sprite_Battler.prototype.initMembers = function() {
+        _Sprite_Battler_initMembers.apply(this, arguments);
+        this._frameCount     = 0;
+        this._prevBlendColor = null;
+    };
+
     var _Sprite_Battler_update      = Sprite_Battler.prototype.update;
     Sprite_Battler.prototype.update = function() {
         if (this._battler) {
@@ -361,6 +406,7 @@
             this.updateOpacity();
             this.updateTone();
             this.updateBlendMode();
+            this.updateBlendColor();
         }
         this.updateScale();
     };
@@ -384,6 +430,22 @@
     Sprite_Battler.prototype.updateBlendMode = function() {
         var sprite       = this.getMainSprite();
         sprite.blendMode = this._battler.getBlendMode();
+    };
+
+    Sprite_Battler.prototype.updateBlendColor = function() {
+        var sprite = this.getMainSprite();
+        var color = this._battler.getBlendColor();
+        if (!color.equals(this._prevBlendColor)) {
+            this._prevBlendColor = color;
+            this._frameCount     = 0;
+        }
+        var realBlendColor = color.clone();
+        var interval = this._battler.getBlendColorInterval();
+        realBlendColor[3] = color[3] / 2 + Math.floor(color[3] * (Math.sin(this._frameCount / interval) + 1) / 4);
+        if (!Utils.isMobileDevice() || this._frameCount % 8 === 0) {
+            sprite.setBlendColor(realBlendColor);
+        }
+        this._frameCount++;
     };
 
     Sprite_Battler.prototype.getMainSprite = function() {

@@ -190,7 +190,7 @@
         return windowLayer ? windowLayer.children[0].convertEscapeCharacters(text) : text;
     };
 
-    var convertEscapeCharacters = function(text, evalFlg) {
+    var convertEscapeCharacters = function(text) {
         if (text == null) text = '';
         text = text.replace(/\\/g, '\x1b');
         text = text.replace(/\x1b\x1b/g, '\\');
@@ -226,6 +226,12 @@
 
     var getClassName = function(object) {
         return object.constructor.toString().replace(/function\s+(.*)\s*\([\s\S]*/m, '$1');
+    };
+
+    var outputLog = function(value, level) {
+        if (level || Utils.isOptionValid('test')) {
+            console.log(metaTagPrefix + value);
+        }
     };
 
     //=============================================================================
@@ -280,9 +286,10 @@
 //    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 //    Game_Interpreter.prototype.pluginCommand = function(command, args) {
 //        _Game_Interpreter_pluginCommand.apply(this, arguments);
-//        if (!command.match(new RegExp('^' + metaTagPrefix))) return;
+//        var commandPrefix = new RegExp('^' + metaTagPrefix);
+//        if (!command.match(commandPrefix)) return;
 //        try {
-//            this.pluginCommand${NAME}(command.replace(metaTagPrefix, ''), args);
+//            this.pluginCommand${NAME}(command.replace(commandPrefix, ''), args);
 //        } catch (e) {
 //            if ($gameTemp.isPlaytest() && Utils.isNwjs()) {
 //                var window = require('nw.gui').Window.get();
