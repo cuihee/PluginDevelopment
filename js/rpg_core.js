@@ -3861,7 +3861,12 @@ Sprite.prototype._renderWebGL = function(renderer) {
         }
 
         //copy of pixi-v4 internal code
-        this.calculateVertices();
+        if(this.transform.updated || this.textureDirty)
+        {
+            this.textureDirty = false;
+            // set the vertex data
+            this.calculateVertices();
+        }
 
         if (this._isPicture) {
             // use heavy renderer, which reduces artifacts and applies corrent blendMode,
@@ -4962,9 +4967,6 @@ function ShaderTilemap() {
 ShaderTilemap.prototype = Object.create(Tilemap.prototype);
 ShaderTilemap.prototype.constructor = ShaderTilemap;
 
-// we need this constant for some platforms (Samsung S4, S5, Tab4, HTC One H8)
-PIXI.glCore.VertexArrayObject.FORCE_NATIVE = true;
-
 /**
  * Uploads animation state in renderer
  *
@@ -5072,7 +5074,7 @@ ShaderTilemap.prototype._createLayers = function() {
         this.addChild(this.upperZLayer = new PIXI.tilemap.ZLayer(this, 4));
 
         var parameters = PluginManager.parameters('ShaderTilemap');
-        var useSquareShader = Number(parameters.hasOwnProperty('squareShader') ? parameters['squareShader'] : 0);
+        var useSquareShader = Number(parameters.hasOwnProperty('squareShader') ? parameters['squareShader'] : 1);
 
         this.lowerZLayer.addChild(this.lowerLayer = new PIXI.tilemap.CompositeRectTileLayer(0, [], useSquareShader));
         this.lowerLayer.shadowColor = new Float32Array([0.0, 0.0, 0.0, 0.5]);
@@ -8510,6 +8512,7 @@ Decrypter.decryptArrayBuffer = function(arrayBuffer) {
         refBytes[i] = parseInt("0x" + ref.substr(i * 2, 2), 16);
     }
     for (i = 0; i < this._headerlength; i++) {
+        console.log(header[i], refBytes[i])
         if (header[i] !== refBytes[i]) {
             throw new Error("Header is wrong");
         }

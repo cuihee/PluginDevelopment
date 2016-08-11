@@ -36,6 +36,10 @@ CompositeRectTileLayer.prototype.setBitmaps = function(bitmaps) {
     this.modificationMarker = 0;
 };
 
+CompositeRectTileLayer.prototype.syncBitmaps = function(bitmaps) {
+      
+};
+
 CompositeRectTileLayer.prototype.clear = function () {
     for (var i=0;i<this.children.length;i++)
         this.children[i].clear();
@@ -303,13 +307,9 @@ RectTileLayer.prototype.addRect = function (textureId, u, v, x, y, tileWidth, ti
 RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
     var points = this.pointsBuf;
     if (points.length === 0) return;
-    var rectsCount = points.length / 9;
+
     var tile = renderer.plugins.tile;
     var gl = renderer.gl;
-    if (!useSquare) {
-        tile.checkIndexBuffer(rectsCount);
-    }
-
     var shader = tile.getShader(useSquare);
     var textures = this.textures;
     if (textures.length === 0) return;
@@ -339,7 +339,7 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
     vb = vb.vb;
     //if layer was changed, re-upload vertices
     vb.bind();
-    var vertices = rectsCount * shader.vertPerQuad;
+    var vertices = points.length / 9 * shader.vertPerQuad;
     if (this.modificationMarker != vertices) {
         this.modificationMarker = vertices;
         var vs = shader.stride * vertices;
@@ -378,7 +378,6 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
             //var tint = 0xffffffff;
             var tint = -1;
             for (i = 0;i<points.length;i += 9) {
-                var eps = 0.5;
                 textureId = (points[i+8] >> 2);
                 shiftU = 1024 * (points[i+8] & 1);
                 shiftV = 1024 * ((points[i+8] >> 1) & 1);
@@ -386,14 +385,11 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
                 var w = points[i+4], h = points[i+5];
                 var u = points[i] + shiftU, v = points[i+1] + shiftV;
                 var animX = points[i+6], animY = points[i+7];
+                textureId >>= 2;
                 arr[sz++] = x;
                 arr[sz++] = y;
                 arr[sz++] = u;
                 arr[sz++] = v;
-                arr[sz++] = u + eps;
-                arr[sz++] = v + eps;
-                arr[sz++] = u + w - eps;
-                arr[sz++] = v + h - eps;
                 arr[sz++] = animX;
                 arr[sz++] = animY;
                 arr[sz++] = textureId;
@@ -401,10 +397,6 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
                 arr[sz++] = y;
                 arr[sz++] = u + w;
                 arr[sz++] = v;
-                arr[sz++] = u + eps;
-                arr[sz++] = v + eps;
-                arr[sz++] = u + w - eps;
-                arr[sz++] = v + h - eps;
                 arr[sz++] = animX;
                 arr[sz++] = animY;
                 arr[sz++] = textureId;
@@ -412,10 +404,20 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
                 arr[sz++] = y + h;
                 arr[sz++] = u + w;
                 arr[sz++] = v + h;
-                arr[sz++] = u + eps;
-                arr[sz++] = v + eps;
-                arr[sz++] = u + w - eps;
-                arr[sz++] = v + h - eps;
+                arr[sz++] = animX;
+                arr[sz++] = animY;
+                arr[sz++] = textureId;
+                arr[sz++] = x;
+                arr[sz++] = y;
+                arr[sz++] = u;
+                arr[sz++] = v;
+                arr[sz++] = animX;
+                arr[sz++] = animY;
+                arr[sz++] = textureId;
+                arr[sz++] = x + w;
+                arr[sz++] = y + h;
+                arr[sz++] = u + w;
+                arr[sz++] = v + h;
                 arr[sz++] = animX;
                 arr[sz++] = animY;
                 arr[sz++] = textureId;
@@ -423,10 +425,6 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
                 arr[sz++] = y + h;
                 arr[sz++] = u;
                 arr[sz++] = v + h;
-                arr[sz++] = u + eps;
-                arr[sz++] = v + eps;
-                arr[sz++] = u + w - eps;
-                arr[sz++] = v + h - eps;
                 arr[sz++] = animX;
                 arr[sz++] = animY;
                 arr[sz++] = textureId;
@@ -442,7 +440,7 @@ RectTileLayer.prototype.renderWebGL = function(renderer, useSquare) {
     if (useSquare)
         gl.drawArrays(gl.POINTS, 0, vertices);
     else
-        gl.drawElements(gl.TRIANGLES, rectsCount * 6, gl.UNSIGNED_SHORT, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, vertices);
 };
 
 module.exports = RectTileLayer;
@@ -453,12 +451,12 @@ var shaderGenerator = require('./shaderGenerator');
 function RectTileShader(gl, maxTextures)
 {
     PIXI.Shader.call(this, gl,
-        "#define GLSLIFY 1\nattribute vec2 aVertexPosition;\n\nattribute vec2 aTextureCoord;\n\nattribute vec4 aFrame;\n\nattribute vec2 aAnim;\n\nattribute float aTextureId;\n\nuniform mat3 projectionMatrix;\n\nuniform vec2 animationFrame;\n\nvarying vec2 vTextureCoord;\n\nvarying float vTextureId;\n\nvarying vec4 vFrame;\n\nvoid main(void){\n\n   gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);\n\n   vec2 anim = aAnim * animationFrame;\n\n   vTextureCoord = aTextureCoord + anim;\n\n   vFrame = aFrame + vec4(anim, anim);\n\n   vTextureId = aTextureId;\n\n}\n\n",
-        shaderGenerator.generateFragmentSrc(maxTextures, "#define GLSLIFY 1\nvarying vec2 vTextureCoord;\n\nvarying vec4 vFrame;\n\nvarying float vTextureId;\n\nuniform vec4 shadowColor;\n\nuniform sampler2D uSamplers[%count%];\n\nuniform vec2 uSamplerSize[%count%];\n\nvoid main(void){\n\n   vec2 textureCoord = clamp(vTextureCoord, vFrame.xy, vFrame.zw);\n\n   float textureId = floor(vTextureId + 0.5);\n\n   vec4 color;\n\n   %forloop%\n\n   gl_FragColor = color;\n\n}\n\n")
+        "#define GLSLIFY 1\nattribute vec2 aVertexPosition;\n\nattribute vec2 aTextureCoord;\n\nattribute vec2 aAnim;\n\nattribute float aTextureId;\n\nuniform mat3 projectionMatrix;\n\nuniform vec2 animationFrame;\n\nvarying vec2 vTextureCoord;\n\nvarying float vTextureId;\n\nvoid main(void){\n\n   gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);\n\n   vTextureCoord = aTextureCoord + aAnim * animationFrame;\n\n   vTextureId = aTextureId;\n\n}\n\n",
+        shaderGenerator.generateFragmentSrc(maxTextures, "#define GLSLIFY 1\nvarying vec2 vTextureCoord;\n\nvarying float vTextureId;\n\nuniform vec4 shadowColor;\n\nuniform sampler2D uSamplers[%count%];\n\nuniform vec2 uSamplerSize[%count%];\n\nvoid main(void){\n\n   vec2 textureCoord = vTextureCoord;\n\n   vec4 color;\n\n   %forloop%\n\n   gl_FragColor = color;\n\n}\n\n")
     );
     this.maxTextures = maxTextures;
-    this.vertSize = 11;
-    this.vertPerQuad = 4;
+    this.vertSize = 7;
+    this.vertPerQuad = 6;
     this.stride = this.vertSize * 4;
     shaderGenerator.fillSamplers(this, this.maxTextures);
 }
@@ -471,9 +469,8 @@ RectTileShader.prototype.createVao = function (renderer, vb) {
         .addIndex(this.indexBuffer)
         .addAttribute(vb, this.attributes.aVertexPosition, gl.FLOAT, false, this.stride, 0)
         .addAttribute(vb, this.attributes.aTextureCoord, gl.FLOAT, false, this.stride, 2 * 4)
-        .addAttribute(vb, this.attributes.aFrame, gl.FLOAT, false, this.stride, 4 * 4)
-        .addAttribute(vb, this.attributes.aAnim, gl.FLOAT, false, this.stride, 8 * 4)
-        .addAttribute(vb, this.attributes.aTextureId, gl.FLOAT, false, this.stride, 10 * 4);
+        .addAttribute(vb, this.attributes.aAnim, gl.FLOAT, false, this.stride, 4 * 4)
+        .addAttribute(vb, this.attributes.aTextureId, gl.FLOAT, false, this.stride, 6 * 4);
 };
 
 module.exports = RectTileShader;
@@ -485,7 +482,7 @@ var shaderGenerator = require('./shaderGenerator');
 function SquareTileShader(gl, maxTextures) {
     PIXI.Shader.call(this, gl,
         "#define GLSLIFY 1\nattribute vec2 aVertexPosition;\n\nattribute vec2 aTextureCoord;\n\nattribute vec2 aAnim;\n\nattribute float aTextureId;\n\nattribute float aSize;\n\nuniform mat3 projectionMatrix;\n\nuniform vec2 samplerSize;\n\nuniform vec2 animationFrame;\n\nuniform float projectionScale;\n\nvarying vec2 vTextureCoord;\n\nvarying float vSize;\n\nvarying float vTextureId;\n\nvoid main(void){\n\n   gl_Position = vec4((projectionMatrix * vec3(aVertexPosition + aSize * 0.5, 1.0)).xy, 0.0, 1.0);\n\n   gl_PointSize = aSize * projectionScale;\n\n   vTextureCoord = aTextureCoord + aAnim * animationFrame;\n\n   vTextureId = aTextureId;\n\n   vSize = aSize;\n\n}\n\n",
-        shaderGenerator.generateFragmentSrc(maxTextures, "#define GLSLIFY 1\nvarying vec2 vTextureCoord;\n\nvarying float vSize;\n\nvarying float vTextureId;\n\nuniform vec4 shadowColor;\n\nuniform sampler2D uSamplers[%count%];\n\nuniform vec2 uSamplerSize[%count%];\n\nuniform vec2 pointScale;\n\nvoid main(void){\n\n   float margin = 1.0/vSize;\n\n   vec2 clamped = vec2(clamp(gl_PointCoord.x, margin, 1.0 - margin), clamp(gl_PointCoord.y, margin, 1.0 - margin));\n\n   vec2 textureCoord = ((clamped-0.5) * pointScale + 0.5) * vSize + vTextureCoord;\n\n   float textureId = vTextureId;\n\n   vec4 color;\n\n   %forloop%\n\n   gl_FragColor = color;\n\n}\n\n")
+        shaderGenerator.generateFragmentSrc(maxTextures, "#define GLSLIFY 1\nvarying vec2 vTextureCoord;\n\nvarying float vSize;\n\nvarying float vTextureId;\n\nuniform vec4 shadowColor;\n\nuniform sampler2D uSamplers[%count%];\n\nuniform vec2 uSamplerSize[%count%];\n\nuniform vec2 pointScale;\n\nvoid main(void){\n\n   float margin = 1.0/vSize;\n\n   vec2 clamped = vec2(clamp(gl_PointCoord.x, margin, 1.0 - margin), clamp(gl_PointCoord.y, margin, 1.0 - margin));\n\n   vec2 textureCoord = ((clamped-0.5) * pointScale + 0.5) * vSize + vTextureCoord;\n\n   vec4 color;\n\n   %forloop%\n\n   gl_FragColor = color;\n\n}\n\n")
     );
     this.maxTextures = maxTextures;
     this.vertSize = 8;
@@ -532,7 +529,7 @@ function TileRenderer(renderer) {
     this.lastTimeCheck = 0;
     this.tileAnim = [0, 0];
     this.maxTextures = 4;
-    this.indices = [];
+    this.indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
 }
 
 TileRenderer.prototype = Object.create(PIXI.ObjectRenderer.prototype);
@@ -545,7 +542,6 @@ TileRenderer.prototype.onContextChange = function() {
     this.rectShader = new RectTileShader(gl, maxTextures);
     this.squareShader = new SquareTileShader(gl, maxTextures);
     this.indexBuffer = glCore.GLBuffer.createIndexBuffer(gl, this.indices, gl.STATIC_DRAW);
-    this.checkIndexBuffer(2000);
     this.rectShader.indexBuffer = this.indexBuffer;
     this.squareShader.indexBuffer = this.indexBuffer;
     this.vbs = {};
@@ -664,35 +660,6 @@ TileRenderer.prototype.removeVb = function(id) {
         this.vbs[id].vao.destroy();
         delete this.vbs[id];
     }
-};
-
-TileRenderer.prototype.checkIndexBuffer = function(size) {
-    // the total number of indices in our array, there are 6 points per quad.
-    var totalIndices = size * 6;
-    var indices = this.indices;
-    if (totalIndices <= indices.length) {
-        return;
-    }
-    var len = indices.length || totalIndices;
-    while (len < totalIndices) {
-        len <<= 1;
-    }
-
-    indices = new Uint16Array(len);
-    this.indices = indices;
-
-    // fill the indices with the quads to draw
-    for (var i=0, j=0; i < totalIndices; i += 6, j += 4)
-    {
-        indices[i + 0] = j + 0;
-        indices[i + 1] = j + 1;
-        indices[i + 2] = j + 2;
-        indices[i + 3] = j + 0;
-        indices[i + 4] = j + 2;
-        indices[i + 5] = j + 3;
-    }
-
-    this.indexBuffer.upload(indices);
 };
 
 TileRenderer.prototype.getShader = function(useSquare) {
@@ -843,7 +810,7 @@ var shaderGenerator = {
 
             if(i < maxTextures-1)
             {
-                src += 'if(textureId == ' + i + '.0)';
+                src += 'if(vTextureId == ' + i + '.0)';
             }
 
             src += '\n{';

@@ -6,6 +6,7 @@
 // http://opensource.org/licenses/mit-license.php
 // ----------------------------------------------------------------------------
 // Version
+// 1.1.1 2016/08/11 動的イベント生成中にセーブした場合にロードできなくなる不具合を修正
 // 1.1.0 2016/08/10 テンプレートイベントプラグインとの連携で、テンプレートマップからイベントを生成する機能を追加
 //                  生成場所を条件付きランダムで設定できる機能を追加
 // 1.0.1 2016/08/09 イベント生成後にメニューを開いて戻ってくるとエラーが発生する現象の修正
@@ -65,6 +66,10 @@
  *  についても制限はありません。
  *  このプラグインはもうあなたのものです。
  */
+
+function Game_PrefabEvent() {
+    this.initialize.apply(this, arguments);
+}
 
 (function() {
     'use strict';
@@ -290,6 +295,53 @@
     };
 
     //=============================================================================
+    // Game_PrefabEvent
+    //  動的に生成されるイベントオブジェクトです。
+    //=============================================================================
+    Game_PrefabEvent.prototype             = Object.create(Game_Event.prototype);
+    Game_PrefabEvent.prototype.constructor = Game_PrefabEvent;
+
+    Game_PrefabEvent.prototype.initialize = function(mapId, eventId, originalEventId, x, y, isTemplate) {
+        this._originalEventId = originalEventId;
+        this._eventId         = eventId;
+        this._isTemplate      = isTemplate;
+        this.linkEventData();
+        Game_Event.prototype.initialize.call(this, mapId, eventId);
+        this.locate(x, y);
+        this._spritePrepared = false;
+    };
+
+    Game_PrefabEvent.prototype.linkEventData = function() {
+        $dataMap.events[this._eventId] = (this._isTemplate ?
+            $dataTemplateEvents[this._originalEventId] : $dataMap.events[this._originalEventId]);
+    };
+
+    Game_PrefabEvent.prototype.isPrefab = function() {
+        return true;
+    };
+
+    Game_PrefabEvent.prototype.erase = function() {
+        Game_Event.prototype.erase.call(this);
+        this.eraseSelfSwitch();
+        delete $dataMap.events[this._eventId];
+    };
+
+    Game_PrefabEvent.prototype.isSpritePrepared = function() {
+        return this._spritePrepared;
+    };
+
+    Game_PrefabEvent.prototype.setSpritePrepared = function() {
+        this._spritePrepared = true;
+    };
+
+    Game_PrefabEvent.prototype.eraseSelfSwitch = function() {
+        ['A', 'B', 'C', 'D'].forEach(function(swCode) {
+            var key = [this._mapId, this._eventId, swCode];
+            $gameSelfSwitches.setValue(key, undefined);
+        }.bind(this));
+    };
+
+    //=============================================================================
     // Sprite
     //  SpriteIDの付与に使用するカウンターを取得します。
     //=============================================================================
@@ -366,59 +418,7 @@
     var _DataManager_onLoad = DataManager.onLoad;
     DataManager.onLoad      = function(object) {
         _DataManager_onLoad.apply(this, arguments);
-        if (object === $dataMap && $gameMap) {
-            $gameMap.restoreLinkPrefabEvents();
-        }
+        if (object === $dataMap && $gameMap) $gameMap.restoreLinkPrefabEvents();
     };
 })();
 
-//=============================================================================
-// Game_PrefabEvent
-//  動的に生成されるイベントオブジェクトです。
-//=============================================================================
-function Game_PrefabEvent() {
-    this.initialize.apply(this, arguments);
-}
-
-Game_PrefabEvent.prototype.constructor = Game_PrefabEvent;
-Game_PrefabEvent.prototype             = Object.create(Game_Event.prototype);
-
-Game_PrefabEvent.prototype.initialize = function(mapId, eventId, originalEventId, x, y, isTemplate) {
-    this._originalEventId = originalEventId;
-    this._eventId         = eventId;
-    this._isTemplate      = isTemplate;
-    this.linkEventData();
-    Game_Event.prototype.initialize.call(this, mapId, eventId);
-    this.locate(x, y);
-    this._spritePrepared = false;
-};
-
-Game_PrefabEvent.prototype.linkEventData = function() {
-    $dataMap.events[this._eventId] = (this._isTemplate ?
-        $dataTemplateEvents[this._originalEventId] : $dataMap.events[this._originalEventId]);
-};
-
-Game_PrefabEvent.prototype.isPrefab = function() {
-    return true;
-};
-
-Game_PrefabEvent.prototype.erase = function() {
-    Game_Event.prototype.erase.call(this);
-    this.eraseSelfSwitch();
-    delete $dataMap.events[this._eventId];
-};
-
-Game_PrefabEvent.prototype.isSpritePrepared = function() {
-    return this._spritePrepared;
-};
-
-Game_PrefabEvent.prototype.setSpritePrepared = function() {
-    this._spritePrepared = true;
-};
-
-Game_PrefabEvent.prototype.eraseSelfSwitch = function() {
-    ['A', 'B', 'C', 'D'].forEach(function(swCode) {
-        var key = [this._mapId, this._eventId, swCode];
-        $gameSelfSwitches.setValue(key, undefined);
-    }.bind(this));
-};
